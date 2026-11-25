@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0a0d14">
+<meta name="description" content="شطرنج مفتوح المصدر — مجاني بالكامل">
+<link rel="manifest" href="manifest.json">
+<title>Open Chess v10.0 — شطرنج مفتوح المصدر</title>
+<style>
+:root{--bg:#0a0d14;--bg2:#111520;--panel:#161b28;--line:#2a3142;--text:#e6e8ee;--muted:#8a92a6;--accent:#3b82f6;--accent2:#8b5cf6;--success:#27ae60;--danger:#e74c3c;--warn:#f39c12;--sq-light:#e8d9b5;--sq-dark:#7a5a3a;--sel:#f5c542;--hint:#4f9d69;--last:#cfa34a}
+body.light{--bg:#f5f7fb;--bg2:#fff;--panel:#fff;--line:#dde3ec;--text:#12151c;--muted:#5a6172}
+body.theme-wood{--sq-light:#e8d9b5;--sq-dark:#7a5a3a}
+body.theme-marble{--sq-light:#f0f2f5;--sq-dark:#5b6375}
+body.theme-emerald{--sq-light:#edeed1;--sq-dark:#779556}
+body.theme-ocean{--sq-light:#dee3e6;--sq-dark:#7a95a8}
+body.theme-neon{--sq-light:#1a2233;--sq-dark:#0d1220}
+body.theme-rose{--sq-light:#fde4e4;--sq-dark:#b86570}
+body.theme-sand{--sq-light:#f5e6c8;--sq-dark:#b8935a}
+body.theme-forest{--sq-light:#d8e0c8;--sq-dark:#4a6840}
+body.pieces-classic .piece{text-shadow:0 2px 3px rgba(0,0,0,.35)}
+body.pieces-bold .piece{text-shadow:0 0 0 #000,0 3px 4px rgba(0,0,0,.6);font-weight:900}
+body.pieces-outline .piece{color:transparent!important;-webkit-text-stroke:2px currentColor!important;text-shadow:none!important}
+body.pieces-outline .piece.w{-webkit-text-stroke:2px #fff!important}
+body.pieces-outline .piece.b{-webkit-text-stroke:2px #111!important}
+body.pieces-neon .piece{text-shadow:0 0 8px currentColor,0 0 16px currentColor}
+body.pieces-flat .piece{text-shadow:none}
+body.pieces-emoji .piece{font-family:'Segoe UI Emoji','Apple Color Emoji',sans-serif;text-shadow:0 2px 4px rgba(0,0,0,.4)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,Tahoma,sans-serif;background:radial-gradient(ellipse at top,var(--bg2) 0%,var(--bg) 80%);color:var(--text);min-height:100vh;padding:12px;transition:background .35s}
+.app{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:1120px;margin:auto;width:100%}
+.board-area{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.header-bar{width:min(88vw,540px);display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.header-bar h1{font-size:15px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.elo-badge{display:flex;flex-direction:column;align-items:flex-end;font-size:11px;line-height:1.2}
+.elo-badge .lbl{color:var(--muted);font-size:10px}
+.elo-badge .val{font-family:ui-monospace,monospace;font-weight:700;font-size:17px;color:var(--accent);transition:color .3s}
+.elo-badge .delta{font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;margin-right:4px}
+.elo-badge .delta.up{background:var(--success);color:#fff}
+.elo-badge .delta.down{background:var(--danger);color:#fff}
+.elo-badge.flash-win .val{color:var(--success)}
+.elo-badge.flash-loss .val{color:var(--danger)}
+#board{display:grid;grid-template-columns:repeat(8,1fr);width:min(88vw,540px);aspect-ratio:1/1;border:3px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.55);dir:ltr}
+body.theme-neon #board{box-shadow:0 0 40px rgba(59,130,246,.35),0 0 80px rgba(139,92,246,.2)}
+.sq{position:relative;display:flex;align-items:center;justify-content:center;font-size:min(9.2vw,54px);line-height:1;cursor:pointer;user-select:none;transition:background .15s,box-shadow .15s}
+.sq.light{background:var(--sq-light)}.sq.dark{background:var(--sq-dark)}
+.sq.sel{box-shadow:inset 0 0 0 4px var(--sel)}
+.sq.hint{box-shadow:inset 0 0 0 4px var(--hint)!important}
+.sq.last{box-shadow:inset 0 0 0 4px var(--last)}
+.sq.check{background:#c0392b!important;animation:pulseCheck .8s ease-in-out infinite alternate}
+.sq.correct{box-shadow:inset 0 0 0 4px #27ae60!important}
+.sq.wrong{box-shadow:inset 0 0 0 4px #e74c3c!important}
+@keyframes pulseCheck{from{filter:brightness(1)}to{filter:brightness(1.35)}}
+.sq .dot{position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(20,20,20,.42);pointer-events:none}
+.sq.cap .dot{width:88%;height:88%;background:transparent;border-radius:50%;box-shadow:inset 0 0 0 5px rgba(20,20,20,.42)}
+.piece{position:relative;z-index:2;transition:transform .1s,filter .2s}
+.piece.w{color:#fff;-webkit-text-stroke:1.5px #1b1b1b}
+.piece.b{color:#1b1b1b;-webkit-text-stroke:1.5px #000}
+body.theme-neon .piece.w{color:#e0f2ff;-webkit-text-stroke:1px #3b82f6}
+body.theme-neon .piece.b{color:#a78bfa;-webkit-text-stroke:1px #7c3aed}
+.coords{display:grid;grid-template-columns:repeat(8,1fr);width:min(88vw,540px);dir:ltr;font-size:11px;opacity:.5;text-align:center}
+.evalbar{position:relative;width:min(88vw,540px);height:14px;background:#222;border-radius:7px;overflow:hidden;border:1px solid var(--line);dir:ltr}
+.evalbar .white{position:absolute;left:0;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#e8d9b5,#fff5dc);transition:width .4s}
+.evalbar .black{position:absolute;right:0;top:0;bottom:0;width:50%;background:linear-gradient(270deg,#1b1b1b,#3a3a3a);transition:width .4s}
+.evalbar .label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;text-shadow:0 0 3px #000;font-weight:700;z-index:2}
+.clock-row{display:none;gap:8px;width:min(88vw,540px)}
+.clock-row.show{display:flex}
+.clock{flex:1;background:linear-gradient(135deg,var(--panel),var(--bg2));border:2px solid var(--line);border-radius:10px;padding:8px;text-align:center;font-family:ui-monospace,monospace;font-size:20px;font-weight:700;transition:.2s}
+.clock.active{border-color:var(--accent);box-shadow:0 0 14px rgba(59,130,246,.5)}
+.clock.low{color:var(--danger);animation:pulseLow .6s infinite}
+@keyframes pulseLow{50%{opacity:.65}}
+.clock.out{background:var(--danger);color:#fff;border-color:var(--danger)}
+.clock .label{font-size:10px;opacity:.65;font-weight:normal;display:block}
+.variant-badge{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:5}
+body.blindfold .piece{display:none!important}
+body.blindfold .sq::before{content:attr(data-coord);position:absolute;font-size:10px;opacity:.35;top:2px;right:2px;color:#fff}
+.side{width:min(88vw,370px);display:flex;flex-direction:column;gap:10px}
+.tabs{display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;flex-wrap:wrap}
+.tab{flex:1;padding:5px 3px;border-radius:7px;cursor:pointer;font-size:10px;font-weight:600;background:transparent;border:none;color:var(--text);transition:.18s;min-width:44px}
+.tab:hover{background:var(--line)}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.4)}
+.tab-content{display:none;flex-direction:column;gap:10px}
+.tab-content.active{display:flex;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.card{background:linear-gradient(135deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:12px;padding:12px}
+.sub{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+.status{font-size:13px;font-weight:600;padding:10px;border-radius:9px;background:var(--bg);border:1px solid var(--line);text-align:center;margin-bottom:10px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+button{font:inherit;font-size:12px;padding:8px 9px;border-radius:9px;cursor:pointer;background:var(--bg);color:var(--text);border:1px solid var(--line);transition:.15s;font-weight:500}
+button:hover{background:var(--line);transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+button.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;box-shadow:0 3px 10px rgba(59,130,246,.35)}
+button.primary:hover{box-shadow:0 5px 16px rgba(59,130,246,.5)}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+label.row{display:flex;justify-content:space-between;align-items:center;font-size:12px;gap:8px;margin-top:6px}
+label.row:first-child{margin-top:0}
+select,input[type=text]{font:inherit;font-size:12px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:6px}
+input[type=text]{width:100%}
+#log{height:120px;overflow:auto;font-family:ui-monospace,monospace;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px;line-height:1.7}
+#log .mv{display:inline-block;min-width:58px}
+#log .num{opacity:.5;margin-left:4px}
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.theme-swatch{height:36px;border-radius:8px;cursor:pointer;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);font-weight:600;transition:.15s}
+.theme-swatch:hover{transform:scale(1.04);border-color:var(--accent)}
+.theme-swatch.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,.3)}
+.theme-swatch.wood{background:linear-gradient(135deg,#e8d9b5 50%,#7a5a3a 50%)}
+.theme-swatch.marble{background:linear-gradient(135deg,#f0f2f5 50%,#5b6375 50%)}
+.theme-swatch.emerald{background:linear-gradient(135deg,#edeed1 50%,#779556 50%)}
+.theme-swatch.ocean{background:linear-gradient(135deg,#dee3e6 50%,#7a95a8 50%)}
+.theme-swatch.neon{background:linear-gradient(135deg,#1a2233 50%,#0d1220 50%)}
+.theme-swatch.rose{background:linear-gradient(135deg,#fde4e4 50%,#b86570 50%)}
+.theme-swatch.sand{background:linear-gradient(135deg,#f5e6c8 50%,#b8935a 50%)}
+.theme-swatch.forest{background:linear-gradient(135deg,#d8e0c8 50%,#4a6840 50%)}
+.piece-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px}
+.piece-swatch{height:40px;border-radius:8px;cursor:pointer;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--bg);transition:.15s}
+.piece-swatch:hover{border-color:var(--accent);transform:scale(1.06)}
+.piece-swatch.active{border-color:var(--accent);background:var(--line)}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);border-radius:12px;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:10;dir:rtl}
+.overlay.show{display:flex;animation:fadeIn .2s}
+.overlay h2{font-size:22px;color:#fff;text-align:center;font-weight:700}
+.promo{display:flex;gap:10px}
+.promo div{width:60px;height:60px;font-size:38px;display:flex;align-items:center;justify-content:center;background:#fff;color:#111;border-radius:12px;cursor:pointer;transition:.15s}
+.promo div:hover{background:var(--sel);transform:scale(1.08)}
+.online-status{font-size:12px;text-align:center;padding:8px;border-radius:7px;background:var(--bg);border:1px solid var(--line)}
+.online-status.ok{background:var(--success);color:#fff;border-color:var(--success)}
+.online-status.wait{background:var(--warn);color:#fff;border-color:var(--warn)}
+.online-status.err{background:var(--danger);color:#fff;border-color:var(--danger)}
+.room-code{font-family:ui-monospace,monospace;font-size:22px;font-weight:800;letter-spacing:4px;text-align:center;padding:10px;background:var(--bg);border:2px dashed var(--accent);border-radius:9px;color:var(--sel)}
+.puzzle-item,.blunder-item,.history-item,.match-card{padding:8px;background:var(--bg);border:1px solid var(--line);border-radius:7px;margin-bottom:5px;font-size:12px;cursor:pointer;transition:.15s}
+.puzzle-item:hover,.blunder-item:hover{background:var(--line)}
+.puzzle-item.solved{border-color:var(--success);opacity:.7}
+#evalChart{width:100%;height:160px;background:var(--bg);border:1px solid var(--line);border-radius:9px}
+.blunder-item .tag{font-weight:700;padding:1px 6px;border-radius:4px;margin-left:6px;font-size:11px}
+.tag.blunder{background:var(--danger);color:#fff}
+.tag.mistake{background:var(--warn);color:#fff}
+.tag.inaccuracy{background:#f1c40f;color:#111}
+.history-item{display:flex;justify-content:space-between;cursor:default;font-size:11px}
+.history-item .win{color:var(--success);font-weight:700}
+.history-item .loss{color:var(--danger);font-weight:700}
+.history-item .draw{color:var(--muted);font-weight:700}
+.badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.badge{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 4px;text-align:center;font-size:10px;opacity:.35;transition:.3s;position:relative}
+.badge.unlocked{opacity:1;border-color:var(--sel);box-shadow:0 0 12px rgba(245,197,66,.3)}
+.badge .icon{font-size:22px;display:block;margin-bottom:2px}
+.badge .name{font-weight:700;font-size:9.5px;line-height:1.2}
+.badge.unlocked::after{content:'✓';position:absolute;top:3px;right:5px;color:var(--success);font-weight:900;font-size:11px}
+.variants-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.variant-btn{flex:1;min-width:65px;font-size:10.5px;padding:6px}
+.variant-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.editor-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(84vw,420px);aspect-ratio:1/1;border:3px solid var(--line);border-radius:10px;overflow:hidden;dir:ltr;margin:8px auto}
+.editor-sq{position:relative;display:flex;align-items:center;justify-content:center;font-size:min(7vw,34px);line-height:1;cursor:pointer;transition:background .1s}
+.editor-sq.light{background:var(--sq-light)}
+.editor-sq.dark{background:var(--sq-dark)}
+.editor-sq:hover{filter:brightness(1.15)}
+.editor-palette{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.editor-piece{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px;text-align:center;font-size:20px;cursor:pointer;transition:.15s}
+.editor-piece:hover{background:var(--line)}
+.editor-piece.active{border-color:var(--accent);background:var(--line)}
+.chat-box{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;height:180px;overflow:auto;font-size:12px;margin-bottom:6px}
+.chat-msg{margin-bottom:6px;line-height:1.4}
+.chat-msg .author{font-weight:700;color:var(--accent);margin-left:6px}
+.chat-msg.me .author{color:var(--success)}
+.fb-status{font-size:11px;text-align:center;padding:6px;border-radius:6px;background:var(--bg);border:1px solid var(--line);margin-top:8px}
+.fb-status.ok{background:var(--success);color:#fff;border-color:var(--success)}
+.fb-status.err{background:var(--danger);color:#fff;border-color:var(--danger)}
+.llm-response{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;line-height:1.7;margin-top:8px;min-height:40px;white-space:pre-wrap}
+.tournament-grid{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+.match-card.done{border-color:var(--success);opacity:.85}
+.match-card.active{border-color:var(--accent);box-shadow:0 0 8px rgba(59,130,246,.3)}
+.match-player{display:flex;justify-content:space-between;padding:3px 0;font-size:11.5px}
+.match-player.winner{color:var(--success);font-weight:700}
+@media(max-width:720px){.app{flex-direction:column;align-items:center}}
+</style>
+</head>
+<body class="theme-wood pieces-classic">
+<div class="app">
+  <div class="board-area">
+    <div class="header-bar">
+      <h1>♟ Open Chess v10.0</h1>
+      <div class="elo-badge" id="eloBadge">
+        <div class="lbl">ELO</div>
+        <div class="val"><span class="delta" id="eloDelta"></span><span id="eloValue">1200</span></div>
+      </div>
+    </div>
+    <div class="clock-row" id="clockRow">
+      <div class="clock" id="clockB"><span class="label">الأسود</span><span class="time">00:00.0</span></div>
+      <div class="clock" id="clockW"><span class="label">الأبيض</span><span class="time">00:00.0</span></div>
+    </div>
+    <div id="board"></div>
+    <div class="coords" id="coords"></div>
+    <div class="evalbar">
+      <div class="black"></div><div class="white"></div>
+      <div class="label" id="evalLabel">0.0</div>
+    </div>
+    <div class="overlay" id="overlay">
+      <h2 id="overText"></h2>
+      <div class="promo" id="promoBox"></div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="tabs">
+      <button class="tab active" data-tab="play">اللعب</button>
+      <button class="tab" data-tab="online">أونلاين</button>
+      <button class="tab" data-tab="variants">متغيرات</button>
+      <button class="tab" data-tab="puzzles">ألغاز</button>
+      <button class="tab" data-tab="analysis">تحليل</button>
+      <button class="tab" data-tab="coach">مدرب</button>
+      <button class="tab" data-tab="editor">محرر</button>
+      <button class="tab" data-tab="tournament">بطولات</button>
+      <button class="tab" data-tab="chat">دردشة</button>
+      <button class="tab" data-tab="openings">فتحات</button>
+      <button class="tab" data-tab="endgame">نهاية</button>
+      <button class="tab" data-tab="players">لاعبون</button>
+      <button class="tab" data-tab="appearance">مظهر</button>
+      <button class="tab" data-tab="badges">أوسمة</button>
+      <button class="tab" data-tab="history">سجل</button>
+      <button class="tab" data-tab="cloud">سحابة</button>
+      <button class="tab" data-tab="settings">إعدادات</button>
+    </div>
+
+    <div class="tab-content active" id="tab-play">
+      <div class="card">
+        <div class="status" id="status">الدور: الأبيض</div>
+        <div class="btns">
+          <button class="primary" id="btnNew">لعبة جديدة</button>
+          <button id="btnUndo">تراجع</button>
+          <button id="btnFlip">قلب</button>
+          <button id="btnHint">💡 تلميح</button>
+          <button id="btnPgn">PGN</button>
+          <button id="btnFen">FEN</button>
+          <button id="btnImportPgn">📥 استيراد</button>
+          <button id="btnAnalyzeCur">🔍 تحليل</button>
+        </div>
+      </div>
+      <div class="card">
+        <label class="row">ساعة
+          <select id="clockPreset">
+            <option value="none" selected>بدون</option>
+            <option value="60+0">Bullet 1+0</option>
+            <option value="180+0">Blitz 3+0</option>
+            <option value="180+2">Blitz 3+2</option>
+            <option value="300+0">Blitz 5+0</option>
+            <option value="300+3">Blitz 5+3</option>
+            <option value="600+0">Rapid 10+0</option>
+            <option value="600+5">Rapid 10+5</option>
+          </select>
+        </label>
+      </div>
+      <div class="card">
+        <div class="sub" style="margin:0 0 6px">سجل النقلات</div>
+        <div id="log"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-online">
+      <div class="card">
+        <div class="online-status" id="onlineStatus">غير متصل</div>
+        <button class="primary" id="btnCreateRoom" style="width:100%;margin-top:10px">🎯 إنشاء غرفة</button>
+        <div style="margin-top:8px"><input type="text" id="joinCode" placeholder="كود الغرفة" maxlength="6" style="text-transform:uppercase;margin-bottom:6px"><button id="btnJoinRoom" style="width:100%">🔗 انضمام</button></div>
+        <div id="roomInfo" style="margin-top:10px;display:none">
+          <div class="sub">شارك الكود:</div>
+          <div class="room-code" id="roomCode">------</div>
+        </div>
+        <button id="btnLeaveRoom" style="width:100%;margin-top:8px;display:none">🚪 مغادرة</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-variants">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">♟ المتغيرات</h1>
+        <div class="variants-row">
+          <button class="variant-btn active" data-variant="standard">Standard</button>
+          <button class="variant-btn" data-variant="chess960">Chess960</button>
+          <button class="variant-btn" data-variant="koth">KotH</button>
+          <button class="variant-btn" data-variant="threecheck">3-Check</button>
+        </div>
+        <button class="primary" id="btnStartVariant" style="width:100%;margin-top:10px">🎲 ابدأ</button>
+        <div class="sub" id="variantInfo" style="margin-top:8px;text-align:center;font-size:10.5px">Standard — الشطرنج التقليدي</div>
+      </div>
+      <div class="card">
+        <label class="row">وضع الأعمى <input type="checkbox" id="blindfoldOn"></label>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-puzzles">
+      <div class="card">
+        <button class="primary" id="btnDailyPuzzle" style="width:100%">🌍 لغز اليوم (Lichess)</button>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <input type="text" id="puzzleIdInput" placeholder="Puzzle ID" style="flex:1">
+          <button id="btnLoadPuzzleId">تحميل</button>
+        </div>
+        <div id="puzzleFeedback" style="margin-top:8px;font-size:12px;text-align:center;font-weight:600;min-height:18px"></div>
+      </div>
+      <div class="card">
+        <div class="sub" style="margin:0 0 6px">القائمة</div>
+        <div id="puzzleList" style="max-height:280px;overflow:auto"></div>
+        <button id="btnNextPuzzle" style="width:100%;margin-top:6px;display:none">التالي →</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-analysis">
+      <div class="card">
+        <button class="primary" id="btnAnalyze" style="width:100%">🔍 تحليل المباراة</button>
+        <div id="analysisStatus" style="margin-top:8px;font-size:11px;text-align:center;opacity:.7"></div>
+      </div>
+      <div class="card"><canvas id="evalChart"></canvas></div>
+      <div class="card">
+        <div class="sub" style="margin:0 0 6px">الأخطاء</div>
+        <div id="blunderList" style="max-height:200px;overflow:auto"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-coach">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🎓 المدرب العربي</h1>
+        <label class="row">تفعيل <input type="checkbox" id="coachOn" checked></label>
+        <label class="row">العمق
+          <select id="coachDepth">
+            <option value="2">سريع</option>
+            <option value="3" selected>متوسط</option>
+            <option value="4">دقيق</option>
+          </select>
+        </label>
+      </div>
+      <div class="card">
+        <div class="sub" style="margin:0 0 6px">التعليقات</div>
+        <div id="coachLog" style="max-height:320px;overflow:auto;font-size:12px;line-height:1.6"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-editor">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🎨 محرر الموضع</h1>
+        <div class="editor-board" id="editorBoard"></div>
+        <div class="editor-palette" id="editorPalette"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <select id="editorTurn" style="flex:1"><option value="w">الأبيض</option><option value="b">الأسود</option></select>
+          <button id="btnEditorClear">تفريغ</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="primary" id="btnEditorPlay" style="flex:1">▶ العب</button>
+          <button id="btnEditorCopyFen">FEN</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-tournament">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🏆 بطولة محلية</h1>
+        <label class="row">اللاعبون
+          <select id="tournSize"><option value="4">4</option><option value="8" selected>8</option><option value="16">16</option></select>
+        </label>
+        <label class="row">المستوى
+          <select id="tournLevel"><option value="1">مبتدئ</option><option value="2">سهل</option><option value="3" selected>متوسط</option><option value="4">صعب</option></select>
+        </label>
+        <button class="primary" id="btnTournStart" style="width:100%;margin-top:8px">🚀 ابدأ</button>
+        <button id="btnTournReset" style="width:100%;margin-top:6px;display:none">🔄 إعادة</button>
+      </div>
+      <div class="card" id="tournBracketCard" style="display:none">
+        <div class="tournament-grid" id="tournBracket"></div>
+        <div id="tournStatus" style="text-align:center;font-size:11px;font-weight:600;margin-top:8px;color:var(--accent)"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-chat">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">💬 دردشة</h1>
+        <div class="chat-box" id="chatBox"></div>
+        <div style="display:flex;gap:6px">
+          <input type="text" id="chatInput" placeholder="اكتب..." style="flex:1" maxlength="200">
+          <button id="btnChatSend">إرسال</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button id="btnOfferDraw" style="flex:1">🤝 تعادل</button>
+          <button id="btnResign" style="flex:1">🏳️ استسلام</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-openings">
+      <div class="card">
+        <button class="primary" id="btnLoadOpening" style="width:100%">🔍 تحليل الموضع</button>
+        <div id="openingExplorer" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-endgame">
+      <div class="card">
+        <button class="primary" id="btnProbeEndgame" style="width:100%">🎯 تقييم (3-5 قطع)</button>
+        <div id="endgameTrainer" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-players">
+      <div class="card">
+        <div style="display:flex;gap:6px">
+          <input type="text" id="playerInput" placeholder="Chess.com username" style="flex:1">
+          <button id="btnFetchPlayer">جلب</button>
+        </div>
+        <div id="playerStats" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-appearance">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🎨 الرقعة</h1>
+        <div class="theme-grid" id="themeGrid">
+          <div class="theme-swatch wood active" data-board="wood">خشب</div>
+          <div class="theme-swatch marble" data-board="marble">رخام</div>
+          <div class="theme-swatch emerald" data-board="emerald">زمرد</div>
+          <div class="theme-swatch ocean" data-board="ocean">محيط</div>
+          <div class="theme-swatch neon" data-board="neon">نيون</div>
+          <div class="theme-swatch rose" data-board="rose">وردي</div>
+          <div class="theme-swatch sand" data-board="sand">رمل</div>
+          <div class="theme-swatch forest" data-board="forest">غابة</div>
+        </div>
+      </div>
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">♟ القطع</h1>
+        <div class="piece-grid" id="pieceGrid">
+          <div class="piece-swatch active" data-piece="classic">♞</div>
+          <div class="piece-swatch" data-piece="bold">♞</div>
+          <div class="piece-swatch" data-piece="outline">♞</div>
+          <div class="piece-swatch" data-piece="neon">♞</div>
+          <div class="piece-swatch" data-piece="flat">♞</div>
+          <div class="piece-swatch" data-piece="emoji">🦄</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-badges">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🏆 الأوسمة</h1>
+        <div class="sub"><span id="badgesCount">0</span> / 10 مفتوحة</div>
+        <div class="badges-grid" id="badgesGrid"></div>
+        <button id="btnResetBadges" style="width:100%;margin-top:10px;font-size:11px">🔄 إعادة تعيين</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-history">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🏆 سجل المباريات</h1>
+        <div id="historyList" style="max-height:360px;overflow:auto"></div>
+        <button id="btnResetElo" style="width:100%;margin-top:10px">🔄 إعادة ELO</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-cloud">
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">☁️ Firebase</h1>
+        <div id="fbStatus" class="fb-status">غير مهيّأ</div>
+        <button id="btnFbSetup" style="width:100%;margin-top:8px">🔧 إعداد</button>
+      </div>
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🤖 AI ذكي (Groq)</h1>
+        <input type="text" id="groqKey" placeholder="gsk_..." style="margin-bottom:6px">
+        <button id="btnSaveGroq" style="width:100%">💾 حفظ</button>
+        <button class="primary" id="btnAskAI" style="width:100%;margin-top:6px">🤖 اسأل المدرب</button>
+        <div class="llm-response" id="llmResponse">الشرح سيظهر هنا...</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-settings">
+      <div class="card">
+        <label class="row">AI <input type="checkbox" id="aiOn" checked></label>
+        <label class="row">الصعوبة
+          <select id="aiDepth"><option value="1">مبتدئ</option><option value="2">سهل</option><option value="3" selected>متوسط</option><option value="4">صعب</option></select>
+        </label>
+        <label class="row">تلعب بـ
+          <select id="humanColor"><option value="w" selected>الأبيض</option><option value="b">الأسود</option></select>
+        </label>
+        <label class="row">الصوت <input type="checkbox" id="soundOn" checked></label>
+        <label class="row">الثيم الفاتح <input type="checkbox" id="themeLight"></label>
+        <button id="btnExport" style="width:100%;margin-top:8px">📤 تصدير الإعدادات</button>
+        <button id="btnImport" style="width:100%;margin-top:6px">📥 استيراد</button>
+      </div>
+      <div class="card">
+        <h1 style="font-size:13px;margin-bottom:6px">🐟 Stockfish 18</h1>
+        <div id="sfStatus" style="font-size:11px;text-align:center;opacity:.7;margin-bottom:8px">غير مُهيّأ</div>
+        <label class="row">كخصم <input type="checkbox" id="useStockfish"></label>
+        <label class="row">العمق
+          <select id="sfDepth"><option value="6">6</option><option value="10">10</option><option value="12" selected>12</option><option value="16">16</option></select>
+        </label>
+        <button id="btnInitSF" style="width:100%;margin-top:8px">تهيئة</button>
+        <button id="btnAnalyzeSF" style="width:100%;margin-top:6px">🔍 تحليل</button>
+        <div id="sfAnalysis" style="margin-top:8px;font-size:11px;text-align:center;font-family:ui-monospace,monospace;min-height:18px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+/* ============================================================
+   OPEN CHESS v10.0 — MIT License — Complete Edition
+   ============================================================ */
+const START_FEN='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const N_DIRS=[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+const K_DIRS=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const B_DIRS=[[-1,-1],[-1,1],[1,-1],[1,1]];
+const R_DIRS=[[-1,0],[1,0],[0,-1],[0,1]];
+const FILES='abcdefgh';
+const GLYPH={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+const opp=c=>c==='w'?'b':'w';
+const isWhite=p=>p===p.toUpperCase();
+const $=id=>document.getElementById(id);
+
+/* === FEN === */
+function sqToIdx(s){return (8-parseInt(s[1],10))*8+FILES.indexOf(s[0])}
+function idxToSq(i){return FILES[i&7]+(8-(i>>3))}
+function parseFEN(fen){
+  const p=fen.trim().split(/\s+/),board=new Array(64).fill(null);let i=0;
+  for(const ch of p[0]){if(ch==='/')continue;if(ch>='1'&&ch<='8')i+=+ch;else board[i++]=ch}
+  return{board,turn:p[1],castling:{wK:p[2].includes('K'),wQ:p[2].includes('Q'),bK:p[2].includes('k'),bQ:p[2].includes('q')},ep:(p[3]==='-'||!p[3])?null:sqToIdx(p[3]),halfmove:+(p[4]||0),fullmove:+(p[5]||1),history:[]};
+}
+function toFEN(st){
+  let rows=[];
+  for(let r=0;r<8;r++){let s='',empty=0;
+    for(let c=0;c<8;c++){const p=st.board[r*8+c];if(p){if(empty){s+=empty;empty=0}s+=p}else empty++}
+    if(empty)s+=empty;rows.push(s)}
+  const cast=(st.castling.wK?'K':'')+(st.castling.wQ?'Q':'')+(st.castling.bK?'k':'')+(st.castling.bQ?'q':'')||'-';
+  return`${rows.join('/')} ${st.turn} ${cast} ${st.ep!=null?idxToSq(st.ep):'-'} ${st.halfmove} ${st.fullmove}`;
+}
+
+/* === ATTACK === */
+function isAttacked(b,idx,by){
+  const r=idx>>3,c=idx&7,isW=(by==='w');const pr=isW?r+1:r-1;
+  for(const dc of[-1,1]){const cc=c+dc;if(cc>=0&&cc<8&&pr>=0&&pr<8){const p=b[pr*8+cc];if(p&&p===(isW?'P':'p'))return true}}
+  for(const[dr,dc]of N_DIRS){const rr=r+dr,cc=c+dc;if(rr<0||rr>7||cc<0||cc>7)continue;const p=b[rr*8+cc];if(p&&p===(isW?'N':'n'))return true}
+  for(const[dr,dc]of K_DIRS){const rr=r+dr,cc=c+dc;if(rr<0||rr>7||cc<0||cc>7)continue;const p=b[rr*8+cc];if(p&&p===(isW?'K':'k'))return true}
+  for(const[dr,dc]of B_DIRS){let rr=r+dr,cc=c+dc;while(rr>=0&&rr<8&&cc>=0&&cc<8){const p=b[rr*8+cc];if(p){if(p===(isW?'B':'b')||p===(isW?'Q':'q'))return true;break}rr+=dr;cc+=dc}}
+  for(const[dr,dc]of R_DIRS){let rr=r+dr,cc=c+dc;while(rr>=0&&rr<8&&cc>=0&&cc<8){const p=b[rr*8+cc];if(p){if(p===(isW?'R':'r')||p===(isW?'Q':'q'))return true;break}rr+=dr;cc+=dc}}
+  return false;
+}
+function findKing(b,color){const k=color==='w'?'K':'k';for(let i=0;i<64;i++)if(b[i]===k)return i;return -1}
+function inCheck(st,color){const col=color||st.turn,k=findKing(st.board,col);return k>=0&&isAttacked(st.board,k,opp(col))}
+
+/* === MOVE GENERATION === */
+function pseudoMoves(st,color){
+  const b=st.board,moves=[];
+  for(let i=0;i<64;i++){
+    const p=b[i];if(!p)continue;
+    if(isWhite(p)!==(color==='w'))continue;
+    const r=i>>3,c=i&7,t=p.toUpperCase();
+    if(t==='P'){
+      const dir=color==='w'?-1:1,start=color==='w'?6:1,promoRow=color==='w'?0:7;
+      const pushMove=(to,extra)=>{if((to>>3)===promoRow){for(const pr of['q','r','b','n'])moves.push({from:i,to,promo:pr,...extra})}else moves.push({from:i,to,...extra})};
+      const one=r+dir;
+      if(one>=0&&one<8&&!b[one*8+c]){pushMove(one*8+c,{});const two=r+2*dir;if(r===start&&!b[two*8+c])moves.push({from:i,to:two*8+c,double:true})}
+      for(const dc of[-1,1]){const cc=c+dc;if(cc<0||cc>7||one<0||one>7)continue;const tIdx=one*8+cc,tp=b[tIdx];if(tp&&isWhite(tp)!==(color==='w'))pushMove(tIdx,{capture:true});else if(st.ep===tIdx)moves.push({from:i,to:tIdx,ep:true})}
+    }else if(t==='N'){
+      for(const[dr,dc]of N_DIRS){const rr=r+dr,cc=c+dc;if(rr<0||rr>7||cc<0||cc>7)continue;const tp=b[rr*8+cc];if(tp&&isWhite(tp)===(color==='w'))continue;moves.push({from:i,to:rr*8+cc,capture:!!tp})}
+    }else if(t==='B'||t==='R'||t==='Q'){
+      const dirs=t==='B'?B_DIRS:t==='R'?R_DIRS:B_DIRS.concat(R_DIRS);
+      for(const[dr,dc]of dirs){let rr=r+dr,cc=c+dc;while(rr>=0&&rr<8&&cc>=0&&cc<8){const tp=b[rr*8+cc];if(!tp)moves.push({from:i,to:rr*8+cc});else{if(isWhite(tp)!==(color==='w'))moves.push({from:i,to:rr*8+cc,capture:true});break}rr+=dr;cc+=dc}}
+    }else if(t==='K'){
+      for(const[dr,dc]of K_DIRS){const rr=r+dr,cc=c+dc;if(rr<0||rr>7||cc<0||cc>7)continue;const tp=b[rr*8+cc];if(tp&&isWhite(tp)===(color==='w'))continue;moves.push({from:i,to:rr*8+cc,capture:!!tp})}
+      const row=color==='w'?7:0;
+      if(i===row*8+4){
+        const kR=color==='w'?st.castling.wK:st.castling.bK,qR=color==='w'?st.castling.wQ:st.castling.bQ,rook=color==='w'?'R':'r',enemy=opp(color);
+        if(kR&&!b[row*8+5]&&!b[row*8+6]&&b[row*8+7]===rook&&!isAttacked(b,i,enemy)&&!isAttacked(b,row*8+5,enemy)&&!isAttacked(b,row*8+6,enemy))moves.push({from:i,to:row*8+6,castle:'k'});
+        if(qR&&!b[row*8+1]&&!b[row*8+2]&&!b[row*8+3]&&b[row*8+0]===rook&&!isAttacked(b,i,enemy)&&!isAttacked(b,row*8+3,enemy)&&!isAttacked(b,row*8+2,enemy))moves.push({from:i,to:row*8+2,castle:'q'});
+      }
+    }
+  }
+  return moves;
+}
+
+function makeMove(st,m){
+  const b=st.board,p=b[m.from];
+  const u={m,turn:st.turn,castling:{...st.castling},ep:st.ep,halfmove:st.halfmove,fullmove:st.fullmove,captured:b[m.to],epCap:null,capIdx:-1};
+  b[m.to]=p;b[m.from]=null;
+  if(m.ep){const ci=m.to+(st.turn==='w'?8:-8);u.epCap=b[ci];u.capIdx=ci;b[ci]=null}
+  if(m.promo)b[m.to]=st.turn==='w'?m.promo.toUpperCase():m.promo.toLowerCase();
+  if(m.castle){const row=st.turn==='w'?7:0;if(m.castle==='k'){b[row*8+5]=b[row*8+7];b[row*8+7]=null}else{b[row*8+3]=b[row*8+0];b[row*8+0]=null}}
+  const cr=st.castling;
+  if(p==='K'){cr.wK=false;cr.wQ=false}
+  if(p==='k'){cr.bK=false;cr.bQ=false}
+  if(m.from===63||m.to===63)cr.wK=false;
+  if(m.from===56||m.to===56)cr.wQ=false;
+  if(m.from===7||m.to===7)cr.bK=false;
+  if(m.from===0||m.to===0)cr.bQ=false;
+  st.ep=m.double?(m.from+(st.turn==='w'?-8:8)):null;
+  if(p.toLowerCase()==='p'||u.captured||m.ep)st.halfmove=0;else st.halfmove++;
+  if(st.turn==='b')st.fullmove++;
+  st.turn=opp(st.turn);
+  st.history.push(u);
+}
+function unmakeMove(st){
+  const u=st.history.pop();if(!u)return;
+  const m=u.m,b=st.board;
+  st.turn=u.turn;st.castling=u.castling;st.ep=u.ep;st.halfmove=u.halfmove;st.fullmove=u.fullmove;
+  const moved=b[m.to];
+  b[m.from]=m.promo?(u.turn==='w'?'P':'p'):moved;
+  b[m.to]=u.captured||null;
+  if(m.ep){b[m.to]=null;b[u.capIdx]=u.epCap}
+  if(m.castle){const row=u.turn==='w'?7:0;if(m.castle==='k'){b[row*8+7]=b[row*8+5];b[row*8+5]=null}else{b[row*8+0]=b[row*8+3];b[row*8+3]=null}}
+}
+function legalMoves(st,color){
+  const col=color||st.turn,out=[],saveTurn=st.turn;
+  st.turn=col;
+  for(const m of pseudoMoves(st,col)){makeMove(st,m);const k=findKing(st.board,col);const ok=k>=0&&!isAttacked(st.board,k,opp(col));unmakeMove(st);if(ok)out.push(m)}
+  st.turn=saveTurn;
+  return out;
+}
+function toSAN(st,m){
+  const b=st.board,p=b[m.from],type=p.toUpperCase();
+  if(m.castle)return m.castle==='k'?'O-O':'O-O-O';
+  const toSq=idxToSq(m.to),cap=!!b[m.to]||m.ep;let s='';
+  if(type==='P'){if(cap)s+=FILES[m.from&7]+'x';s+=toSq;if(m.promo)s+='='+m.promo.toUpperCase()}
+  else{
+    s+=type;
+    const rivals=legalMoves(st).filter(x=>x.to===m.to&&x.from!==m.from&&st.board[x.from]&&st.board[x.from].toUpperCase()===type);
+    if(rivals.length){const sf=rivals.some(x=>(x.from&7)===(m.from&7)),sr=rivals.some(x=>(x.from>>3)===(m.from>>3));if(!sf)s+=FILES[m.from&7];else if(!sr)s+=(8-(m.from>>3));else s+=idxToSq(m.from)}
+    if(cap)s+='x';s+=toSq;
+  }
+  makeMove(st,m);const chk=inCheck(st),any=legalMoves(st).length;unmakeMove(st);
+  if(chk)s+=any?'+':'#';
+  return s;
+}
+
+/* === EVAL === */
+const VAL={p:100,n:320,b:330,r:500,q:900,k:20000};
+const PST={
+  p:[0,0,0,0,0,0,0,0,50,50,50,50,50,50,50,50,10,10,20,30,30,20,10,10,5,5,10,25,25,10,5,5,0,0,0,20,20,0,0,0,5,-5,-10,0,0,-10,-5,5,5,10,10,-20,-20,10,10,5,0,0,0,0,0,0,0,0],
+  n:[-50,-40,-30,-30,-30,-30,-40,-50,-40,-20,0,0,0,0,-20,-40,-30,0,10,15,15,10,0,-30,-30,5,15,20,20,15,5,-30,-30,0,15,20,20,15,0,-30,-30,5,10,15,15,10,5,-30,-40,-20,0,5,5,0,-20,-40,-50,-40,-30,-30,-30,-30,-40,-50],
+  b:[-20,-10,-10,-10,-10,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,10,10,5,0,-10,-10,5,5,10,10,5,5,-10,-10,0,10,10,10,10,0,-10,-10,10,10,10,10,10,10,-10,-10,5,0,0,0,0,5,-10,-20,-10,-10,-10,-10,-10,-10,-20],
+  r:[0,0,0,0,0,0,0,0,5,10,10,10,10,10,10,5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,0,0,0,5,5,0,0,0],
+  q:[-20,-10,-10,-5,-5,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,5,5,5,0,-10,-5,0,5,5,5,5,0,-5,0,0,5,5,5,5,0,-5,-10,5,5,5,5,5,0,-10,-10,0,5,0,0,0,0,-10,-20,-10,-10,-5,-5,-10,-10,-20],
+  k:[-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-20,-30,-30,-40,-40,-30,-30,-20,-10,-20,-20,-20,-20,-20,-20,-10,20,20,0,0,0,0,20,20,20,30,10,0,0,10,30,20]
+};
+function evaluate(st){let score=0;for(let i=0;i<64;i++){const p=st.board[i];if(!p)continue;const white=isWhite(p),t=p.toLowerCase(),idx=white?i:63-i,v=VAL[t]+(PST[t]?PST[t][idx]:0);score+=white?v:-v}return st.turn==='w'?score:-score}
+
+/* === ZOBRIST + TT === */
+const ZOBRIST=(()=>{const pieces='KQRBNPkqrbnp';const table={};let seed=0xdeadbeef;const rand=()=>{seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;return seed|0};for(const p of pieces){table[p]=[];for(let i=0;i<64;i++)table[p].push(rand())}table.turn=rand();table.castle={K:rand(),Q:rand(),k:rand(),q:rand()};table.ep=[];for(let i=0;i<64;i++)table.ep.push(rand());return table})();
+function zobristHash(st){let h=0;for(let i=0;i<64;i++){const p=st.board[i];if(p)h^=ZOBRIST[p][i]}if(st.turn==='w')h^=ZOBRIST.turn;if(st.castling.wK)h^=ZOBRIST.castle.K;if(st.castling.wQ)h^=ZOBRIST.castle.Q;if(st.castling.bK)h^=ZOBRIST.castle.k;if(st.castling.bQ)h^=ZOBRIST.castle.q;if(st.ep!==null)h^=ZOBRIST.ep[st.ep];return h}
+const TT=new Map(),TT_MAX=200000;
+function ttStore(h,d,s,f,m){if(TT.size>TT_MAX)TT.clear();TT.set(h,{depth:d,score:s,flag:f,bestMove:m})}
+function ttLookup(h,d,alpha,beta){const e=TT.get(h);if(!e||e.depth<d)return null;if(e.flag==='exact')return e.score;if(e.flag==='lower'&&e.score>=beta)return e.score;if(e.flag==='upper'&&e.score<=alpha)return e.score;return null}
+const killers=[],histTable=new Map();
+function scoreMoveFast(st,m,ply){let s=0;const victim=st.board[m.to],attacker=st.board[m.from];if(victim)s+=10*VAL[victim.toLowerCase()]-VAL[attacker.toLowerCase()];if(m.promo)s+=VAL[m.promo]*8;if(m.castle)s+=60;if(killers[ply]){for(const k of killers[ply]){if(k.from===m.from&&k.to===m.to){s+=800;break}}}const hk=m.from+','+m.to;s+=Math.min(500,histTable.get(hk)||0);return s}
+function search(st,depth,alpha,beta,ply=0){
+  const hash=zobristHash(st);const cached=ttLookup(hash,depth,alpha,beta);if(cached!==null)return cached;
+  const moves=legalMoves(st);
+  if(moves.length===0)return inCheck(st)?-100000+(10-depth)*1000:0;
+  if(depth===0)return evaluate(st);
+  moves.sort((a,b)=>scoreMoveFast(st,b,ply)-scoreMoveFast(st,a,ply));
+  let best=-Infinity,bestMove=null;const alphaOrig=alpha;
+  for(const m of moves){
+    makeMove(st,m);const sc=-search(st,depth-1,-beta,-alpha,ply+1);unmakeMove(st);
+    if(sc>best){best=sc;bestMove=m}
+    if(best>alpha)alpha=best;
+    if(alpha>=beta){if(!killers[ply])killers[ply]=[];killers[ply].unshift({from:m.from,to:m.to});if(killers[ply].length>2)killers[ply].pop();const hk=m.from+','+m.to;histTable.set(hk,(histTable.get(hk)||0)+depth*depth);break}
+  }
+  const flag=best<=alphaOrig?'upper':best>=beta?'lower':'exact';
+  ttStore(hash,depth,best,flag,bestMove);
+  return best;
+}
+function findBestMove(st,maxDepth,timeLimitMs=4000){
+  const moves=legalMoves(st);if(!moves.length)return null;
+  TT.clear();killers.length=0;histTable.clear();
+  let bestMove=moves[0];const t0=performance.now();
+  for(let d=1;d<=maxDepth;d++){
+    if(performance.now()-t0>timeLimitMs)break;
+    moves.sort((a,b)=>scoreMoveFast(st,b,0)-scoreMoveFast(st,a,0));
+    let alpha=-Infinity,iterBest=null;
+    for(const m of moves){
+      makeMove(st,m);const sc=-search(st,d-1,-Infinity,-alpha,1);unmakeMove(st);
+      if(sc>alpha){alpha=sc;iterBest=m}
+    }
+    if(performance.now()-t0<=timeLimitMs&&iterBest)bestMove=iterBest;
+  }
+  return bestMove;
+}
+
+/* === STOCKFISH === */
+let sfWorker=null,sfReady=false;
+const SF_URL='https://huggingface.co/cstr/stockfish-js-wasm/resolve/main/stockfish-18-lite-single.js';
+const SF_WASM_URL='https://huggingface.co/cstr/stockfish-js-wasm/resolve/main/stockfish.wasm';
+function initStockfish(){
+  if(sfWorker)return Promise.resolve(sfReady);
+  return new Promise(resolve=>{
+    try{
+      sfWorker=new Worker(SF_URL);let ready=false;
+      sfWorker.addEventListener('message',e=>{const line=e.data;if(typeof line!=='string')return;if(line==='readyok'){ready=true;sfReady=true;resolve(true)}});
+      sfWorker.onerror=()=>{sfReady=false;resolve(false)};
+      sfWorker.postMessage('setoption name WasmPath value '+SF_WASM_URL);
+      sfWorker.postMessage('uci');sfWorker.postMessage('isready');
+      setTimeout(()=>{if(!ready){sfReady=false;resolve(false)}},20000);
+    }catch(e){sfReady=false;resolve(false)}
+  });
+}
+function uciToMove(st,uci){if(!uci||uci==='(none)'||uci.length<4)return null;const from=sqToIdx(uci.slice(0,2)),to=sqToIdx(uci.slice(2,4)),promo=uci.length>4?uci[4].toLowerCase():null;return legalMoves(st).find(m=>m.from===from&&m.to===to&&(m.promo||null)===promo)||null}
+function stockfishFindMove(st,depth){return new Promise(resolve=>{if(!sfWorker||!sfReady){resolve(null);return}const fen=toFEN(st);let done=false;const handler=e=>{if(done)return;const line=e.data;if(typeof line!=='string'||!line.startsWith('bestmove'))return;done=true;sfWorker.removeEventListener('message',handler);resolve(uciToMove(st,line.split(' ')[1]))};sfWorker.addEventListener('message',handler);sfWorker.postMessage('stop');sfWorker.postMessage('position fen '+fen);sfWorker.postMessage('go depth '+depth);setTimeout(()=>{if(done)return;done=true;sfWorker.removeEventListener('message',handler);resolve(null)},20000)})}
+function stockfishAnalyze(st,depth){return new Promise(resolve=>{if(!sfWorker||!sfReady){resolve(null);return}const fen=toFEN(st);let done=false,lastCp=null;const handler=e=>{if(done)return;const line=e.data;if(typeof line!=='string')return;if(line.startsWith('info')&&line.includes('score cp')){const m=line.match(/score cp (-?\d+)/);if(m)lastCp=parseInt(m[1],10)}if(line.startsWith('bestmove')){done=true;sfWorker.removeEventListener('message',handler);resolve({cp:lastCp,bestUci:line.split(' ')[1]})}};sfWorker.addEventListener('message',handler);sfWorker.postMessage('stop');sfWorker.postMessage('position fen '+fen);sfWorker.postMessage('go depth '+depth);setTimeout(()=>{if(done)return;done=true;sfWorker.removeEventListener('message',handler);resolve({cp:lastCp,bestUci:null})},20000)})}
+
+/* === SOUND === */
+const Sound={ctx:null,enabled:true,ensure(){if(!this.ctx){try{this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}},beep(freq,dur,type='sine',vol=0.15){if(!this.enabled)return;this.ensure();if(!this.ctx)return;try{const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(this.ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.001,this.ctx.currentTime+dur/1000);o.stop(this.ctx.currentTime+dur/1000)}catch(e){}},move(){this.beep(600,80,'sine',0.10)},capture(){this.beep(300,100,'square',0.13)},check(){this.beep(880,200,'triangle',0.18)},mate(){this.beep(440,400,'sawtooth',0.18);setTimeout(()=>this.beep(220,500,'sawtooth',0.18),200)},end(){this.beep(523,300,'sine',0.18);setTimeout(()=>this.beep(392,400,'sine',0.18),150)},correct(){this.beep(880,100,'sine',0.18);setTimeout(()=>this.beep(1320,150,'sine',0.18),100)},wrong(){this.beep(220,200,'square',0.2)}};
+
+/* === CLOCK === */
+const Clock={w:0,b:0,inc:0,active:null,lastTick:0,timer:null,running:false,
+  init(wSec,incSec){this.w=wSec*1000;this.b=wSec*1000;this.inc=incSec*1000;this.active=null;this.running=false;clearInterval(this.timer);this.updateUI()},
+  start(color){this.active=color;this.running=true;this.lastTick=performance.now();clearInterval(this.timer);this.timer=setInterval(()=>this.tick(),100);this.updateUI()},
+  tick(){if(!this.running||!this.active)return;const now=performance.now(),dt=now-this.lastTick;this.lastTick=now;this[this.active]-=dt;if(this[this.active]<=0){this[this.active]=0;this.running=false;clearInterval(this.timer);this.updateUI();onTimeOut(this.active);return}this.updateUI()},
+  stop(){this.running=false;clearInterval(this.timer);this.updateUI()},
+  switchTo(color){if(this.active&&this.inc)this[this.active]+=this.inc;this.lastTick=performance.now();this.active=color;this.updateUI()},
+  updateUI(){const fmt=ms=>{const m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),d=Math.floor((ms%1000)/100);return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${d}`};const wEl=$('clockW'),bEl=$('clockB');if(!wEl||!bEl)return;wEl.querySelector('.time').textContent=fmt(this.w);wEl.classList.toggle('active',this.active==='w'&&this.running);wEl.classList.toggle('low',this.w<20000&&this.w>0);wEl.classList.toggle('out',this.w<=0);bEl.querySelector('.time').textContent=fmt(this.b);bEl.classList.toggle('active',this.active==='b'&&this.running);bEl.classList.toggle('low',this.b<20000&&this.b>0);bEl.classList.toggle('out',this.b<=0)}
+};
+
+/* === THEMES === */
+const Themes={board:'wood',pieces:'classic',boards:['wood','marble','emerald','ocean','neon','rose','sand','forest'],piecesList:['classic','bold','outline','neon','flat','emoji'],
+  apply(board,pieces){
+    if(board){this.board=board;this.boards.forEach(t=>document.body.classList.toggle('theme-'+t,t===board));document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active',s.dataset.board===board))}
+    if(pieces){this.pieces=pieces;this.piecesList.forEach(t=>document.body.classList.toggle('pieces-'+t,t===pieces));document.querySelectorAll('.piece-swatch').forEach(s=>s.classList.toggle('active',s.dataset.piece===pieces))}
+    try{localStorage.setItem('oc_theme',JSON.stringify({board:this.board,pieces:this.pieces}))}catch(e){}
+  },
+  load(){try{const t=JSON.parse(localStorage.getItem('oc_theme')||'null');this.apply(t?.board||'wood',t?.pieces||'classic')}catch(e){this.apply('wood','classic')}}
+};
+Themes.load();
+document.querySelectorAll('.theme-swatch').forEach(s=>s.addEventListener('click',()=>Themes.apply(s.dataset.board,null)));
+document.querySelectorAll('.piece-swatch').forEach(s=>s.addEventListener('click',()=>Themes.apply(null,s.dataset.piece)));
+
+/* === ELO === */
+const ELO={rating:1200,games:[],key:'oc_elo',
+  load(){try{const d=JSON.parse(localStorage.getItem(this.key)||'null');if(d){this.rating=d.rating||1200;this.games=d.games||[]}}catch(e){}this.render()},
+  save(){try{localStorage.setItem(this.key,JSON.stringify({rating:this.rating,games:this.games.slice(-50)}))}catch(e){}},
+  kFactor(){return this.rating<2000?32:16},
+  update(result,oppRating,moves,modeLabel){const expected=1/(1+Math.pow(10,(oppRating-this.rating)/400));const score=result==='win'?1:result==='loss'?0:0.5;const delta=Math.round(this.kFactor()*(score-expected));this.rating=Math.max(100,this.rating+delta);this.games.push({result,delta,rating:this.rating,opp:oppRating,vs:modeLabel||'AI',date:Date.now()});this.save();this.render();this.flash(delta);return delta},
+  render(){const val=$('eloValue');if(val)val.textContent=this.rating;const list=$('historyList');if(!list)return;if(this.games.length===0){list.innerHTML='<div style="text-align:center;opacity:.5;padding:20px;font-size:12px">لا مباريات بعد</div>';return}list.innerHTML=this.games.slice().reverse().map(g=>{const d=new Date(g.date);const dateStr=d.toLocaleDateString('ar-EG',{month:'short',day:'numeric'});const cls=g.result==='win'?'win':g.result==='loss'?'loss':'draw';const label=g.result==='win'?'فوز':g.result==='loss'?'خسارة':'تعادل';const sign=g.delta>=0?'+':'';return`<div class="history-item"><span class="${cls}">${label} vs ${g.vs}</span><span>${sign}${g.delta}→${g.rating}</span><span style="opacity:.4">${dateStr}</span></div>`}).join('')},
+  flash(delta){const badge=$('eloBadge'),deltaEl=$('eloDelta');if(!badge||!deltaEl)return;badge.classList.add(delta>=0?'flash-win':'flash-loss');deltaEl.textContent=(delta>=0?'+':'')+delta;deltaEl.className='delta '+(delta>=0?'up':'down');setTimeout(()=>{badge.classList.remove('flash-win','flash-loss');deltaEl.textContent='';deltaEl.className='delta'},3000)},
+  reset(){if(!confirm('إعادة ELO؟'))return;this.rating=1200;this.games=[];this.save();this.render()}
+};
+ELO.load();
+
+/* === ACHIEVEMENTS === */
+const ACHIEVEMENTS=[
+  {id:'first_win',icon:'🥇',name:'أول فوز',desc:'اربح مباراة'},
+  {id:'first_mate',icon:'♛',name:'كش مات',desc:'أنهِ بكش مات'},
+  {id:'win_no_loss',icon:'🛡️',name:'بلا خسارة',desc:'اربح دون فقدان قطعة'},
+  {id:'quick_win',icon:'⚡',name:'سريع',desc:'فوز بأقل من 20 نقلة'},
+  {id:'win_ai4',icon:'🧠',name:'بطل الذكاء',desc:'اهزم AI صعب'},
+  {id:'chess960',icon:'🎲',name:'متنوع',desc:'العب Chess960'},
+  {id:'koth',icon:'👑',name:'تلة الملك',desc:'العب KotH'},
+  {id:'threecheck',icon:'3️⃣',name:'ثلاثة كش',desc:'العب Three-check'},
+  {id:'blindfold',icon:'🙈',name:'أعمى',desc:'العب وضع الأعمى'},
+  {id:'puzzle_solved',icon:'🧩',name:'حلّال',desc:'احلل لغزاً'}
+];
+const Achievements={
+  key:'oc_achievements_v9',unlocked:{},
+  load(){try{const d=JSON.parse(localStorage.getItem(this.key)||'{}');this.unlocked=d.unlocked||{}}catch(e){this.unlocked={}}this.render()},
+  save(){try{localStorage.setItem(this.key,JSON.stringify({unlocked:this.unlocked}))}catch(e){}},
+  unlock(id){if(this.unlocked[id])return;this.unlocked[id]=Date.now();this.save();this.render();const a=ACHIEVEMENTS.find(x=>x.id===id);if(a)this.notify(a)},
+  notify(a){
+    const el=document.createElement('div');
+    el.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:14px 20px;border-radius:12px;font-weight:700;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:fadeIn .3s';
+    el.textContent=`${a.icon} إنجاز: ${a.name}`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
+  },
+  render(){
+    const grid=$('badgesGrid');if(!grid)return;
+    grid.innerHTML=ACHIEVEMENTS.map(a=>{const u=!!this.unlocked[a.id];return`<div class="badge ${u?'unlocked':''}"><span class="icon">${a.icon}</span><div class="name">${a.name}</div></div>`}).join('');
+    const c=$('badgesCount');if(c)c.textContent=Object.keys(this.unlocked).length;
+  },
+  reset(){if(!confirm('إعادة كل الأوسمة؟'))return;this.unlocked={};this.save();this.render()}
+};
+Achievements.load();
+
+/* === STATE === */
+let state,selected=-1,legalCache=[],flipped=false,lastMove=null,aiEnabled=true,aiDepth=3,humanColor='w',thinking=false,gameEnded=false,posCounts=new Map(),moveLog=[],pendingPromo=null,clockActive=false,fenHistory=[START_FEN],mode='play',currentTab='play',puzzleState=null,currentPuzzle=null,puzzleMoveIdx=0,puzzleOpponentThinking=false,peer=null,conn=null,roomCode=null,onlineColor=null,onlineActive=false,puzzlesList=[],currentVariant='standard',checkCounts={w:0,b:0},tournament=null;
+const boardEl=$('board'),logEl=$('log'),statusEl=$('status'),overlay=$('overlay'),overText=$('overText'),promoBox=$('promoBox');
+
+function posKey(st){return st.board.map(p=>p||'.').join('')+st.turn+(st.castling.wK?'K':'')+(st.castling.wQ?'Q':'')+(st.castling.bK?'k':'')+(st.castling.bQ?'q':'')+(st.ep!=null?idxToSq(st.ep):'-')}
+function renderLog(){logEl.innerHTML=moveLog.map((s,i)=>(i%2===0?`<span class="num">${Math.floor(i/2)+1}.</span> `:'')+`<span class="mv">${s}</span>`).join(' ');logEl.scrollTop=logEl.scrollHeight}
+function insufficientMaterial(st){const pieces=st.board.filter(Boolean).map(p=>p.toLowerCase());if(pieces.includes('p')||pieces.includes('q')||pieces.includes('r'))return false;return pieces.filter(p=>p==='n'||p==='b').length<=1}
+function showOverlay(text){overText.textContent=text;promoBox.innerHTML='';overlay.classList.add('show')}
+function updateEvalBar(){if(!state)return;const ws=state.turn==='w'?evaluate(state):-evaluate(state);const pct=50+50*Math.tanh(ws/400),wp=Math.max(2,Math.min(98,pct));const w=$('.evalbar .white'),b=$('.evalbar .black');if(w)w.style.width=wp+'%';if(b)b.style.width=(100-wp)+'%';const lbl=$('evalLabel');if(lbl)lbl.textContent=(ws>0?'+':'')+(ws/100).toFixed(1)}
+
+function render(){
+  boardEl.innerHTML='';
+  const st=mode==='puzzle'?puzzleState:state;
+  if(!st)return;
+  const order=[];for(let i=0;i<64;i++)order.push(flipped?63-i:i);
+  const kingIdx=inCheck(st)?findKing(st.board,st.turn):-1;
+  for(const idx of order){
+    const r=idx>>3,c=idx&7;
+    const sq=document.createElement('div');
+    sq.className='sq '+((r+c)%2===0?'light':'dark');
+    sq.dataset.idx=idx;sq.dataset.coord=idxToSq(idx);
+    if(idx===selected)sq.classList.add('sel');
+    if(lastMove&&(idx===lastMove.from||idx===lastMove.to))sq.classList.add('last');
+    if(idx===kingIdx)sq.classList.add('check');
+    const mv=legalCache.find(m=>m.to===idx);
+    if(mv){if(mv.capture||mv.ep)sq.classList.add('cap');const dot=document.createElement('span');dot.className='dot';sq.appendChild(dot)}
+    const p=st.board[idx];
+    if(p){const el=document.createElement('span');el.className='piece '+(isWhite(p)?'w':'b');el.textContent=GLYPH[p];sq.appendChild(el)}
+    sq.addEventListener('click',()=>onSquareClick(idx));
+    boardEl.appendChild(sq);
+  }
+  const coords=$('coords');coords.innerHTML='';
+  for(let c=0;c<8;c++){const d=document.createElement('div');d.textContent=flipped?FILES[7-c]:FILES[c];coords.appendChild(d)}
+}
+
+function onTimeOut(loser){
+  gameEnded=true;Clock.stop();
+  const winner=loser==='w'?'الأسود':'الأبيض';
+  statusEl.textContent=`انتهى الوقت — الفائز: ${winner} ⏱`;
+  showOverlay(`${winner} فاز بالوقت ⏱`);
+  Sound.end();
+  if(!onlineActive&&aiEnabled){const hl=loser===humanColor;ELO.update(hl?'loss':'win',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth)}
+}
+
+function updateStatus(){
+  if(mode==='puzzle'){if(puzzleState)statusEl.textContent='🧩 لغز — اعثر على أفضل نقلة';return}
+  if(!state)return;
+  // KotH
+  if(currentVariant==='koth'&&!gameEnded){
+    const wK=findKing(state.board,'w'),bK=findKing(state.board,'b');
+    const center=[27,28,35,36];
+    if(center.includes(wK)||center.includes(bK)){
+      gameEnded=true;Clock.stop();
+      const winner=state.turn==='w'?'الأسود':'الأبيض';
+      statusEl.textContent=`👑 الملك على التلة — ${winner}`;
+      showOverlay(`${winner} وصل التلة!`);
+      Sound.mate();
+      const hw=state.turn!==humanColor;
+      if(!onlineActive&&aiEnabled){ELO.update(hw?'win':'loss',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);if(hw){Achievements.unlock('first_win');if(aiDepth===4)Achievements.unlock('win_ai4')}}
+      return;
+    }
+  }
+  // Three-check
+  if(currentVariant==='threecheck'&&!gameEnded){
+    if(checkCounts.w>=3){gameEnded=true;Clock.stop();statusEl.textContent='3️⃣ الأبيض أعطى 3 كشات';showOverlay('الأبيض فاز');Sound.mate();if(!onlineActive&&aiEnabled)ELO.update('win',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);return}
+    if(checkCounts.b>=3){gameEnded=true;Clock.stop();statusEl.textContent='3️⃣ الأسود أعطى 3 كشات';showOverlay('الأسود فاز');Sound.mate();if(!onlineActive&&aiEnabled)ELO.update('loss',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);return}
+  }
+  const moves=legalMoves(state),chk=inCheck(state);
+  if(moves.length===0){
+    gameEnded=true;Clock.stop();
+    const hw=state.turn!==humanColor;
+    if(chk){
+      const winner=state.turn==='w'?'الأسود':'الأبيض';
+      statusEl.textContent=`كش مات — ${winner} ♛`;
+      showOverlay(hw?'🏆 فزت!':'💀 خسرت');
+      Sound.mate();
+      if(!onlineActive&&aiEnabled){
+        ELO.update(hw?'win':'loss',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);
+        if(hw){Achievements.unlock('first_win');Achievements.unlock('first_mate');if(moveLog.length<40)Achievements.unlock('quick_win');if(aiDepth===4)Achievements.unlock('win_ai4');const lost=state.history.some(u=>u.captured&&isWhite(u.captured)===(humanColor==='w'));if(!lost)Achievements.unlock('win_no_loss')}
+      }
+    }else{
+      statusEl.textContent='تعادل — ملك مسدود';showOverlay('🤝 تعادل');Sound.end();
+      if(!onlineActive&&aiEnabled)ELO.update('draw',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);
+    }
+    return;
+  }
+  if(state.halfmove>=100){gameEnded=true;Clock.stop();statusEl.textContent='تعادل — 50 نقلة';showOverlay('🤝 تعادل');Sound.end();if(!onlineActive&&aiEnabled)ELO.update('draw',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);return}
+  if(insufficientMaterial(state)){gameEnded=true;Clock.stop();statusEl.textContent='تعادل — مادة غير كافية';showOverlay('🤝 تعادل');Sound.end();if(!onlineActive&&aiEnabled)ELO.update('draw',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);return}
+  if(posCounts.get(posKey(state))>=3){gameEnded=true;Clock.stop();statusEl.textContent='تعادل — تكرار ثلاثي';showOverlay('🤝 تعادل');Sound.end();if(!onlineActive&&aiEnabled)ELO.update('draw',aiDepth*300+1000,moveLog,'AI Lv'+aiDepth);return}
+  const tt=state.turn==='w'?'الأبيض':'الأسود';
+  if(onlineActive)statusEl.textContent=`${tt} — ${state.turn===onlineColor?'دورك':'دور الخصم'}`;
+  else statusEl.textContent=`الدور: ${tt}`+(chk?'  ⚠ كش!':'');
+  if(chk)Sound.check();
+}
+
+function onSquareClick(idx){
+  if(mode==='puzzle'){
+    if(!puzzleState||puzzleOpponentThinking)return;
+    const p=puzzleState.board[idx];
+    if(p&&isWhite(p)===(puzzleState.turn==='w')){selected=idx;legalCache=legalMoves(puzzleState).filter(m=>m.from===idx);render();return}
+    if(selected>=0){const c=legalCache.filter(m=>m.to===idx);if(c.length>=1)checkPuzzleMove(c[0]);else{selected=-1;legalCache=[];render()}}
+    return;
+  }
+  if(!state)return;
+  if(gameEnded||thinking||pendingPromo)return;
+  if(onlineActive&&state.turn!==onlineColor)return;
+  if(!onlineActive&&state.turn!==humanColor&&aiEnabled)return;
+  const piece=state.board[idx];
+  if(piece&&isWhite(piece)===(state.turn==='w')){selected=idx;legalCache=legalMoves(state).filter(m=>m.from===idx);render();return}
+  if(selected>=0){const c=legalCache.filter(m=>m.to===idx);if(c.length===1)applyMove(c[0]);else if(c.length>1){pendingPromo=c;showPromotion()}else{selected=-1;legalCache=[];render()}}
+}
+
+function showPromotion(){overText.textContent='اختر الترقية';promoBox.innerHTML='';overlay.classList.add('show');for(const pr of['q','r','b','n']){const d=document.createElement('div');d.textContent=GLYPH[state.turn==='w'?pr.toUpperCase():pr];d.addEventListener('click',()=>{const m=pendingPromo.find(x=>x.promo===pr);pendingPromo=null;overlay.classList.remove('show');if(m)applyMove(m)});promoBox.appendChild(d)}}
+
+function applyMove(m){
+  const stateBefore=parseFEN(toFEN(state));
+  const san=toSAN(state,m);
+  makeMove(state,m);
+  lastMove=m;selected=-1;legalCache=[];
+  if(m.capture||m.ep)Sound.capture();else Sound.move();
+  const key=posKey(state);posCounts.set(key,(posCounts.get(key)||0)+1);
+  moveLog.push(san);fenHistory.push(toFEN(state));
+  // threecheck counter
+  if(currentVariant==='threecheck'&&inCheck(state)){const checker=state.turn==='w'?'b':'w';checkCounts[checker]=(checkCounts[checker]||0)+1}
+  renderLog();render();updateStatus();updateEvalBar();
+  if(clockActive&&!gameEnded)Clock.switchTo(state.turn);
+  Save.save();
+  if(onlineActive&&conn&&conn.open){try{conn.send({type:'move',move:{from:m.from,to:m.to,promo:m.promo||null},fen:toFEN(state)})}catch(e){}}
+  if(Coach.enabled&&!onlineActive){Coach.explain(stateBefore,m,state)}
+  if(!gameEnded&&!onlineActive)maybeAI();
+  if(currentTab==='openings')updateOpeningExplorer();
+}
+
+async function maybeAI(){
+  if(!aiEnabled||gameEnded||onlineActive)return;
+  if(state.turn===humanColor)return;
+  const useSF=$('useStockfish')&&$('useStockfish').checked&&sfReady;
+  thinking=true;statusEl.textContent=useSF?'🐟 Stockfish...':'AI يفكر...';
+  const t0=performance.now();let m=null;
+  if(useSF){const d=parseInt($('sfDepth')?.value||'12',10);m=await stockfishFindMove(state,d);if(!m)m=findBestMove(state,aiDepth)}
+  else{await new Promise(r=>setTimeout(r,20));m=findBestMove(state,aiDepth)}
+  const el=performance.now()-t0;thinking=false;
+  if(clockActive){Clock[state.turn]=Math.max(0,Clock[state.turn]-el);if(Clock[state.turn]<=0){Clock.updateUI();onTimeOut(state.turn);return}}
+  if(m)applyMove(m);else updateStatus();
+}
+
+function newGame(variantOverride){
+  const variant=variantOverride||currentVariant;
+  currentVariant=variant;
+  checkCounts={w:0,b:0};
+  let startFen=START_FEN;
+  if(variant==='chess960')startFen=chess960FEN();
+  state=parseFEN(startFen);
+  selected=-1;legalCache=[];lastMove=null;gameEnded=false;thinking=false;pendingPromo=null;
+  moveLog=[];posCounts=new Map();posCounts.set(posKey(state),1);fenHistory=[startFen];
+  logEl.innerHTML='';overlay.classList.remove('show');
+  const preset=$('clockPreset').value;
+  if(preset==='none'){clockActive=false;Clock.stop();$('clockRow').classList.remove('show')}
+  else{const[sec,inc]=preset.split('+').map(Number);Clock.init(sec,inc);clockActive=true;$('clockRow').classList.add('show');Clock.start(state.turn)}
+  Coach.reset();
+  // badge
+  let badge=document.querySelector('.variant-badge');
+  if(!badge){badge=document.createElement('div');badge.className='variant-badge';document.querySelector('.board-area').appendChild(badge)}
+  badge.style.display=variant==='standard'?'none':'block';
+  if(variant!=='standard')badge.textContent={chess960:'Chess960',koth:'KotH',threecheck:'3-Check'}[variant]||variant;
+  // achievements
+  if(variant==='chess960')Achievements.unlock('chess960');
+  if(variant==='koth')Achievements.unlock('koth');
+  if(variant==='threecheck')Achievements.unlock('threecheck');
+  if(document.body.classList.contains('blindfold'))Achievements.unlock('blindfold');
+  render();updateStatus();updateEvalBar();Save.save();maybeAI();
+  if(!sfReady&&!sfWorker){initStockfish().then(ok=>{if(ok){const s=$('sfStatus');if(s){s.textContent='✅ Stockfish جاهز';s.style.color='#27ae60'}}})}
+}
+
+// Chess960
+function generateChess960Position(){
+  const b=[];
+  for(let i=0;i<8;i+=2)b.push('B');
+  for(let i=1;i<8;i+=2)b.push('B');
+  const pos=[];
+  // pick b1 from 0,2,4,6; b2 from 1,3,5,7
+  const lightBishop=[0,2,4,6][Math.floor(Math.random()*4)];
+  const darkBishop=[1,3,5,7][Math.floor(Math.random()*4)];
+  const arr=new Array(8).fill(null);
+  arr[lightBishop]='B';arr[darkBishop]='B';
+  const avail=[0,1,2,3,4,5,6,7].filter(i=>arr[i]===null);
+  // Queen
+  const qIdx=Math.floor(Math.random()*avail.length);
+  arr[avail[qIdx]]='Q';avail.splice(qIdx,1);
+  // Knights
+  const n1=Math.floor(Math.random()*avail.length);arr[avail[n1]]='N';avail.splice(n1,1);
+  const n2=Math.floor(Math.random()*avail.length);arr[avail[n2]]='N';avail.splice(n2,1);
+  // Remaining: R K R (in that order — king between rooks)
+  arr[avail[0]]='R';arr[avail[1]]='K';arr[avail[2]]='R';
+  return arr.join('');
+}
+function chess960FEN(){
+  const back=generateChess960Position();
+  const black=back.toLowerCase();
+  return `${black}/pppppppp/8/8/8/8/PPPPPPPP/${back} w KQkq - 0 1`;
+}
+
+/* === SAVE (debounced) === */
+const Save={
+  key:'openchess_v10',_timer:null,_pending:null,
+  save(){
+    clearTimeout(this._timer);
+    this._pending={fen:toFEN(state),history:moveLog,fenHistory,clock:clockActive?{w:Clock.w,b:Clock.b,inc:Clock.inc}:null,clockActive,variant:currentVariant,settings:{aiEnabled,aiDepth,humanColor,sound:Sound.enabled,theme:document.body.classList.contains('light'),coachEnabled:Coach.enabled,coachDepth:Coach.depth},ts:Date.now()};
+    this._timer=setTimeout(()=>{try{localStorage.setItem(this.key,JSON.stringify(this._pending))}catch(e){}},500);
+  },
+  flush(){if(this._pending){clearTimeout(this._timer);try{localStorage.setItem(this.key,JSON.stringify(this._pending))}catch(e){}this._pending=null}},
+  load(){try{const r=localStorage.getItem(this.key);return r?JSON.parse(r):null}catch(e){return null}}
+};
+window.addEventListener('beforeunload',()=>Save.flush());
+window.addEventListener('visibilitychange',()=>{if(document.hidden)Save.flush()});
+
+/* === COACH === */
+const Coach={
+  enabled:true,depth:3,history:[],
+  pieceName(p){const n={p:'بيدق',n:'حصان',b:'فيل',r:'رخ',q:'وزير',k:'ملك'};return n[p.toLowerCase()]||'قطعة'},
+  whiteEval(st){const e=evaluate(st);return st.turn==='w'?e:-e},
+  explain(stateBefore,move,stateAfter){
+    if(!this.enabled)return;
+    const parts=[];
+    const moved=stateBefore.board[move.from],captured=stateBefore.board[move.to];
+    if(move.castle==='k')parts.push('🏰 تبييت قصير');
+    else if(move.castle==='q')parts.push('🏰 تبييت طويل');
+    else if(move.promo){const nm={q:'وزير',r:'رخ',b:'فيل',n:'حصان'};parts.push(`⬆️ ترقية إلى ${nm[move.promo]}`)}
+    else if(move.ep)parts.push('💨 أسر بالمرور');
+    else if(captured)parts.push(`⚔️ أسر ${this.pieceName(captured)}`);
+    else parts.push(`➡️ ${this.pieceName(moved)} إلى ${idxToSq(move.to)}`);
+    const isChk=inCheck(stateAfter),movesAfter=legalMoves(stateAfter);
+    const isMate=movesAfter.length===0&&isChk;
+    if(isMate)parts.push('🏆 كش مات!');
+    else if(isChk)parts.push('⚠️ كش');
+    const CENTER=[27,28,35,36];
+    if(CENTER.includes(move.to)&&!CENTER.includes(move.from))parts.push('🎯 سيطرة على المركز');
+    try{
+      const best=findBestMove(parseFEN(toFEN(stateBefore)),this.depth,1500);
+      if(best){
+        const bc=parseFEN(toFEN(stateBefore));makeMove(bc,best);
+        const mw=stateBefore.turn==='w';
+        const perspective=st=>mw?this.whiteEval(st):-this.whiteEval(st);
+        const loss=perspective(bc)-perspective(stateAfter);
+        if(loss>250)parts.push(`❌ خطأ فادح (~${(loss/100).toFixed(1)})`);
+        else if(loss>100)parts.push(`⚠️ خطأ (~${(loss/100).toFixed(1)})`);
+        else if(loss>40)parts.push('🤔 غير دقيقة');
+        else if(loss<15)parts.push('✅ ممتازة');
+      }
+    }catch(e){}
+    const text=parts.join(' · ');
+    this.history.push({ply:moveLog.length,san:toSAN(stateBefore,move),text,type:isMate?'mate':isChk?'check':(text.includes('❌')?'blunder':text.includes('⚠️')?'warn':'ok')});
+    this.render();
+  },
+  render(){
+    const el=$('coachLog');if(!el)return;
+    if(this.history.length===0){el.innerHTML='<div style="text-align:center;opacity:.5;padding:16px;font-size:12px">لا نقلات بعد</div>';return}
+    el.innerHTML=this.history.slice().reverse().slice(0,30).map(h=>{
+      const n=Math.ceil(h.ply/2);
+      const color=h.type==='mate'?'#27ae60':h.type==='check'?'#f39c12':h.type==='blunder'?'#e74c3c':h.type==='warn'?'#f1c40f':'var(--text)';
+      return`<div style="padding:7px;background:var(--bg);border:1px solid var(--line);border-radius:7px;margin-bottom:4px;border-left:3px solid ${color}"><div style="font-weight:700;font-family:ui-monospace,monospace;font-size:11px;margin-bottom:2px">${n}. ${h.san}</div><div style="font-size:11px;opacity:.85">${h.text}</div></div>`;
+    }).join('');
+  },
+  reset(){this.history=[];this.render()}
+};
+Coach.render();
+
+/* === POSITION EDITOR === */
+const PositionEditor={
+  board:new Array(64).fill(null),selectedPiece:'P',turn:'w',
+  init(){this.render();this.renderPalette()},
+  render(){
+    const grid=$('editorBoard');if(!grid)return;grid.innerHTML='';
+    for(let i=0;i<64;i++){
+      const r=i>>3,c=i&7;const sq=document.createElement('div');
+      sq.className='editor-sq '+((r+c)%2===0?'light':'dark');
+      const p=this.board[i];
+      if(p){const span=document.createElement('span');span.className='piece '+(isWhite(p)?'w':'b');span.textContent=GLYPH[p];sq.appendChild(span)}
+      sq.addEventListener('click',()=>{this.board[i]=this.selectedPiece==='X'?null:this.selectedPiece;this.render()});
+      grid.appendChild(sq);
+    }
+  },
+  renderPalette(){
+    const pal=$('editorPalette');if(!pal)return;pal.innerHTML='';
+    const pieces=['K','Q','R','B','N','P','k','q','r','b','n','p','X'];
+    pieces.forEach(p=>{
+      const d=document.createElement('div');
+      d.className='editor-piece'+(this.selectedPiece===p?' active':'');
+      d.textContent=p==='X'?'🗑️':GLYPH[p];
+      d.addEventListener('click',()=>{this.selectedPiece=p;this.renderPalette()});
+      pal.appendChild(d);
+    });
+  },
+  clear(){this.board=new Array(64).fill(null);this.render()},
+  toFEN(){
+    let rows=[];
+    for(let r=0;r<8;r++){let s='',e=0;for(let c=0;c<8;c++){const p=this.board[r*8+c];if(p){if(e){s+=e;e=0}s+=p}else e++}if(e)s+=e;rows.push(s)}
+    return`${rows.join('/')} ${$('editorTurn').value} - - 0 1`;
+  },
+  play(){
+    const fen=this.toFEN();
+    try{
+      const st=parseFEN(fen);
+      if(findKing(st.board,'w')<0||findKing(st.board,'b')<0){alert('يجب وجود ملكين');return}
+      state=st;selected=-1;legalCache=[];lastMove=null;gameEnded=false;moveLog=[];fenHistory=[fen];posCounts=new Map();posCounts.set(posKey(state),1);checkCounts={w:0,b:0};
+      humanColor=fen.split(' ')[1];mode='play';
+      render();updateStatus();updateEvalBar();
+      document.querySelector('[data-tab="play"]').click();
+    }catch(e){alert('FEN غير صالح')}
+  }
+};
+PositionEditor.init();
+
+/* === TOURNAMENT === */
+const Tournament={
+  rounds:[],size:8,level:3,active:false,
+  start(size,level){
+    this.size=size;this.level=level;this.rounds=[];this.active=true;
+    const players=[];
+    for(let i=0;i<size;i++)players.push({name:i===0?'أنت':`لاعب ${i+1}`,isAI:i!==0});
+    let round=[];
+    for(let i=0;i<size;i+=2)round.push({p1:players[i],p2:players[i+1],winner:null});
+    this.rounds.push(round);this.render();this.playNext();
+  },
+  render(){
+    const card=$('tournBracketCard'),grid=$('tournBracket');
+    if(!card||!grid)return;card.style.display='block';grid.innerHTML='';
+    this.rounds.forEach((round,ri)=>{
+      const title=document.createElement('div');
+      title.style.cssText='font-size:11px;font-weight:700;margin:6px 0 4px;color:var(--accent)';
+      title.textContent=this.rounds.length===1||ri===this.rounds.length-1?'النهائي':`الدور ${ri+1}`;
+      grid.appendChild(title);
+      round.forEach(m=>{
+        const c=document.createElement('div');
+        c.className='match-card'+(m.winner?' done':'');
+        c.innerHTML=`<div class="match-player ${m.winner===m.p1?'winner':''}"><span>${m.p1.name}</span><span>${m.winner===m.p1?'🏆':''}</span></div><div class="match-player ${m.winner===m.p2?'winner':''}"><span>${m.p2.name}</span><span>${m.winner===m.p2?'🏆':''}</span></div>`;
+        grid.appendChild(c);
+      });
+    });
+    $('btnTournReset').style.display='block';
+  },
+  playNext(){
+    for(let ri=0;ri<this.rounds.length;ri++){
+      const round=this.rounds[ri];
+      for(const m of round){
+        if(m.winner)continue;
+        if(m.p1.isAI&&m.p2.isAI){m.winner=Math.random()<0.5?m.p1:m.p2;this.render();setTimeout(()=>this.playNext(),200);return}
+        $('tournStatus').textContent=`${m.p1.name} ضد ${m.p2.name}`;
+        setTimeout(()=>this.startMatch(m),400);return;
+      }
+    }
+    this.advance();
+  },
+  startMatch(m){
+    const human=m.p1.isAI?m.p2:m.p1;
+    const ai=m.p1.isAI?m.p1:m.p2;
+    $('tournStatus').textContent=`أنت vs ${ai.name}`;
+    humanColor='w';aiDepth=this.level;aiEnabled=true;currentVariant='standard';newGame();
+    document.querySelector('[data-tab="play"]').click();
+    const check=setInterval(()=>{
+      if(!gameEnded)return;clearInterval(check);
+      const moves=legalMoves(state),chk=inCheck(state);
+      let winner;
+      if(moves.length===0&&chk){winner=state.turn===humanColor?(m.p1===human?m.p2:m.p1):human}
+      else{winner=Math.random()<0.5?m.p1:m.p2}
+      m.winner=winner;this.render();
+      $('tournStatus').textContent=`✅ ${winner.name} فاز`;
+      setTimeout(()=>this.playNext(),1500);
+    },500);
+  },
+  advance(){
+    const last=this.rounds[this.rounds.length-1];
+    if(last.length===1&&last[0].winner){$('tournStatus').textContent=`🏆 البطل: ${last[0].winner.name}`;this.active=false;return}
+    const next=[];
+    for(let i=0;i<last.length;i+=2){if(i+1<last.length){const w1=last[i].winner,w2=last[i+1].winner;if(w1&&w2)next.push({p1:w1,p2:w2,winner:null})}}
+    if(next.length>0)this.rounds.push(next);
+    this.render();setTimeout(()=>this.playNext(),400);
+  },
+  reset(){this.rounds=[];this.active=false;$('tournBracketCard').style.display='none';$('btnTournReset').style.display='none';$('tournStatus').textContent=''}
+};
+
+/* === CHAT === */
+const Chat={
+  send(text){
+    if(!text.trim()||!onlineActive||!conn||!conn.open)return;
+    try{conn.send({type:'chat',text:text.trim()});this.append('أنت',text.trim(),true);$('chatInput').value=''}catch(e){}
+  },
+  receive(text){this.append('الخصم',text,false);Sound.beep(880,80,'sine',0.08)},
+  append(author,text,me){
+    const box=$('chatBox');if(!box)return;
+    const div=document.createElement('div');
+    div.className='chat-msg'+(me?' me':'');
+    div.innerHTML=`<span class="author">${author}:</span>${text.replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))}`;
+    box.appendChild(div);box.scrollTop=box.scrollHeight;
+  },
+  reset(){const b=$('chatBox');if(b)b.innerHTML=''}
+};
+
+/* === FIREBASE === */
+const Firebase={
+  key:'oc_fb_config',
+  getConfig(){try{return JSON.parse(localStorage.getItem(this.key)||'null')}catch(e){return null}},
+  setConfig(c){localStorage.setItem(this.key,JSON.stringify(c))},
+  async init(){
+    const cfg=this.getConfig();
+    if(!cfg){$('fbStatus').textContent='لم يتم الإعداد';return false}
+    try{
+      if(!window.firebase){
+        await this.loadScript('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
+        await this.loadScript('https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js');
+      }
+      if(!firebase.apps.length)firebase.initializeApp(cfg);
+      $('fbStatus').textContent='✅ متصل';
+      $('fbStatus').className='fb-status ok';
+      return true;
+    }catch(e){$('fbStatus').textContent='❌ '+e.message;$('fbStatus').className='fb-status err';return false}
+  },
+  loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})},
+  setup(){
+    const input=prompt('الصق Firebase config (JSON):');
+    if(!input)return;
+    try{const cfg=JSON.parse(input);if(!cfg.databaseURL){alert('يحتاج databaseURL');return}this.setConfig(cfg);this.init()}catch(e){alert('JSON غير صالح')}
+  }
+};
+
+/* === LLM (Groq) === */
+const LLM={
+  key:'oc_groq_key',
+  getKey(){return localStorage.getItem(this.key)||''},
+  setKey(k){localStorage.setItem(this.key,k)},
+  async explain(fen,question){
+    const key=this.getKey();
+    if(!key)return'أدخل مفتاح Groq أولاً';
+    const prompt=`أنت مدرب شطرنج عربي. حلّل الموضع بالعربية:\n\nFEN: ${fen}\n${question?'سؤال: '+question:'اشرح الوضع والخطط.'}\n\nرد بأقل من 200 كلمة بنقاط واضحة.`;
+    try{
+      const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+        body:JSON.stringify({model:'llama-3.1-8b-instant',messages:[{role:'user',content:prompt}],max_tokens:500,temperature:0.7})
+      });
+      if(!resp.ok)return'❌ خطأ ' + resp.status;
+      const data=await resp.json();
+      return data.choices?.[0]?.message?.content||'لا رد';
+    }catch(e){return'❌ '+e.message}
+  }
+};
+
+/* === ONLINE (PeerJS) === */
+function genCode(){const ch='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<6;i++)c+=ch[Math.floor(Math.random()*ch.length)];return c}
+function setOnlineStatus(t,c){const el=$('onlineStatus');el.textContent=t;el.className='online-status '+(c||'')}
+
+$('btnCreateRoom').onclick=()=>{
+  if(peer){setOnlineStatus('غرفة موجودة','err');return}
+  roomCode=genCode();setOnlineStatus('جارٍ الاتصال…','wait');
+  try{
+    peer=new Peer('oc-'+roomCode,{debug:0});
+    peer.on('open',()=>{setOnlineStatus('بانتظار خصم…','wait');$('roomInfo').style.display='block';$('roomCode').textContent=roomCode;$('btnLeaveRoom').style.display='block';$('btnCreateRoom').disabled=true;$('btnJoinRoom').disabled=true});
+    peer.on('connection',c=>{
+      conn=c;
+      conn.on('open',()=>{setOnlineStatus('متصل! تبدأ أبيض','ok');onlineActive=true;onlineColor='w';humanColor='w';newGame();mode='play';Chat.reset();document.querySelector('[data-tab="chat"]').click()});
+      conn.on('data',handleOnlineData);
+      conn.on('close',()=>{setOnlineStatus('انقطع','err');onlineActive=false;cleanupPeer()});
+    });
+    peer.on('error',e=>{setOnlineStatus('خطأ: '+e.type,'err');cleanupPeer()});
+  }catch(e){setOnlineStatus('فشل','err')}
+};
+
+$('btnJoinRoom').onclick=()=>{
+  const code=$('joinCode').value.trim().toUpperCase();
+  if(!code||code.length!==6){setOnlineStatus('كود من 6 أحرف','err');return}
+  if(peer){setOnlineStatus('غرفة موجودة','err');return}
+  roomCode=code;setOnlineStatus('جارٍ الاتصال…','wait');
+  try{
+    peer=new Peer({debug:0});
+    peer.on('open',()=>{
+      conn=peer.connect('oc-'+code,{reliable:true});
+      conn.on('open',()=>{setOnlineStatus('متصل! تلعب أسود','ok');onlineActive=true;onlineColor='b';humanColor='b';state=parseFEN(START_FEN);selected=-1;legalCache=[];lastMove=null;gameEnded=false;moveLog=[];fenHistory=[START_FEN];posCounts=new Map();mode='play';render();updateStatus();$('btnLeaveRoom').style.display='block';$('btnCreateRoom').disabled=true;$('btnJoinRoom').disabled=true;Chat.reset();document.querySelector('[data-tab="chat"]').click()});
+      conn.on('data',handleOnlineData);
+      conn.on('close',()=>{setOnlineStatus('انقطع','err');onlineActive=false;cleanupPeer()});
+    });
+    peer.on('error',()=>{setOnlineStatus('لم يُعثر على الغرفة','err');cleanupPeer()});
+  }catch(e){setOnlineStatus('فشل','err')}
+};
+
+function handleOnlineData(data){
+  if(data.type==='move'){const m=legalMoves(state).find(x=>x.from===data.move.from&&x.to===data.move.to&&(x.promo||null)===data.move.promo);if(m)applyMove(m);return}
+  if(data.type==='chat'){Chat.receive(data.text);return}
+  if(data.type==='draw-offer'){Chat.append('الخصم','عرض التعادل',false);if(confirm('الخصم يعرض التعادل؟')){try{conn.send({type:'draw-accept'})}catch(e){};gameEnded=true;showOverlay('🤝 تعادل')}else{try{conn.send({type:'draw-decline'})}catch(e){}}return}
+  if(data.type==='draw-accept'){Chat.append('الخصم','قبل التعادل',false);gameEnded=true;showOverlay('🤝 تعادل');return}
+  if(data.type==='resign'){Chat.append('الخصم','استسلم',false);gameEnded=true;showOverlay('🏆 فزت — الخصم استسلم');ELO.update('win',1500,moveLog,'Online');return}
+}
+function cleanupPeer(){if(conn){try{conn.close()}catch(e){}}if(peer){try{peer.destroy()}catch(e){}}conn=null;peer=null;onlineActive=false;onlineColor=null;roomCode=null;$('btnCreateRoom').disabled=false;$('btnJoinRoom').disabled=false;$('roomInfo').style.display='none';$('btnLeaveRoom').style.display='none'}
+$('btnLeaveRoom').onclick=()=>{cleanupPeer();setOnlineStatus('غير متصل','');newGame()};
+
+/* === PUZZLES === */
+const LOCAL_PUZZLES=[
+  {id:'local1',fen:'6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',solution:['a1a8'],desc:'كش مات في نقلة',themes:['mateIn1']},
+  {id:'local2',fen:'7k/6pp/8/8/8/8/8/5Q1K w - - 0 1',solution:['f1f8'],desc:'كش مات بالوزير',themes:['mateIn1']},
+  {id:'local3',fen:'6k1/8/5KQ1/8/8/8/8/8 w - - 0 1',solution:['g6g7'],desc:'ملك + وزير',themes:['mateIn1']},
+  {id:'local4',fen:'k7/8/1K6/8/8/8/8/1Q6 w - - 0 1',solution:['b1b7'],desc:'زاوية',themes:['mateIn1']}
+];
+puzzlesList=[...LOCAL_PUZZLES];
+
+function parsePGNToState(pgn,targetPly){
+  let body=pgn;if(body.includes('\n\n'))body=body.slice(body.indexOf('\n\n')+2);
+  body=body.replace(/\{[^}]*\}/g,' ').replace(/\([^)]*\)/g,' ').replace(/\$\d+/g,' ').replace(/[?!]+/g,'').replace(/\d+\.(\.\.)?/g,' ');
+  const tokens=body.split(/\s+/).filter(t=>t&&!/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
+  const st=parseFEN(START_FEN);let ply=0;
+  for(const tok of tokens){
+    if(ply>=targetPly)break;
+    const clean=tok.replace(/[+#]$/,'');let found=null;
+    for(const m of legalMoves(st)){if(toSAN(st,m).replace(/[+#]$/,'')===clean){found=m;break}}
+    if(!found)return null;
+    makeMove(st,found);ply++;
+  }
+  return ply<targetPly?null:st;
+}
+
+async function fetchLichessPuzzle(id){
+  const url=id?`https://lichess.org/api/puzzle/${encodeURIComponent(id)}`:'https://lichess.org/api/puzzle/daily';
+  try{
+    $('puzzleFeedback').textContent='جارٍ التحميل…';
+    const resp=await fetch(url);if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    let st=parsePGNToState(data.game.pgn,data.puzzle.initialPly);
+    if(!st)st=parsePGNToState(data.game.pgn,data.puzzle.initialPly-1);
+    if(!st){$('puzzleFeedback').textContent='❌ فشل التحليل';$('puzzleFeedback').style.color='#e74c3c';return}
+    const p={id:data.puzzle.id,fen:toFEN(st),solution:data.puzzle.solution,desc:`Lichess #${data.puzzle.id} (${data.puzzle.rating})`,themes:data.puzzle.themes||[]};
+    if(!puzzlesList.find(x=>x.id===p.id))puzzlesList.push(p);
+    loadPuzzle(p);$('puzzleFeedback').textContent='';renderPuzzleList();
+  }catch(e){$('puzzleFeedback').textContent='❌ '+e.message;$('puzzleFeedback').style.color='#e74c3c'}
+}
+
+function loadPuzzle(p){
+  currentPuzzle=p;puzzleMoveIdx=0;puzzleOpponentThinking=false;
+  puzzleState=parseFEN(p.fen);mode='puzzle';selected=-1;legalCache=[];lastMove=null;
+  flipped=(puzzleState.turn==='b');
+  $('puzzleFeedback').textContent='';$('btnNextPuzzle').style.display='none';
+  render();statusEl.textContent='🧩 لغز — اعثر على أفضل نقلة';
+}
+
+function renderPuzzleList(){
+  const list=$('puzzleList');if(!list)return;
+  list.innerHTML='';
+  puzzlesList.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='puzzle-item'+(p.solved?' solved':'');
+    d.innerHTML=`<strong>${p.solved?'✅':'🧩'} ${p.desc||p.id}</strong>`;
+    d.onclick=()=>loadPuzzle(p);
+    list.appendChild(d);
+  });
+}
+
+function checkPuzzleMove(m){
+  if(!currentPuzzle)return;
+  const exp=currentPuzzle.solution[puzzleMoveIdx];
+  const made=idxToSq(m.from)+idxToSq(m.to)+(m.promo?m.promo[0]:'');
+  if(exp.toLowerCase().slice(0,4)===made.toLowerCase().slice(0,4)){
+    Sound.correct();makeMove(puzzleState,m);lastMove=m;selected=-1;legalCache=[];puzzleMoveIdx++;render();
+    if(puzzleMoveIdx>=currentPuzzle.solution.length){currentPuzzle.solved=true;$('puzzleFeedback').textContent='🎉 حل كامل!';$('puzzleFeedback').style.color='#27ae60';$('btnNextPuzzle').style.display='block';Achievements.unlock('puzzle_solved');return}
+    puzzleOpponentThinking=true;statusEl.textContent='الخصم يرد…';
+    setTimeout(()=>{
+      const om=uciToMove(puzzleState,currentPuzzle.solution[puzzleMoveIdx]);
+      if(om){Sound.move();makeMove(puzzleState,om);lastMove=om;puzzleMoveIdx++;render();
+        if(puzzleMoveIdx>=currentPuzzle.solution.length){currentPuzzle.solved=true;$('puzzleFeedback').textContent='🎉 أحسنت!';$('puzzleFeedback').style.color='#27ae60';$('btnNextPuzzle').style.display='block';Achievements.unlock('puzzle_solved')}
+        else statusEl.textContent='🧩 دورك';
+      }
+      puzzleOpponentThinking=false;
+    },600);
+  }else{
+    Sound.wrong();
+    const sq=document.querySelector(`.sq[data-idx="${m.from}"]`);if(sq)sq.classList.add('wrong');
+    $('puzzleFeedback').textContent='❌ خطأ';$('puzzleFeedback').style.color='#e74c3c';
+    setTimeout(()=>{selected=-1;legalCache=[];render();$('puzzleFeedback').textContent=''},900);
+  }
+}
+
+/* === OPENING EXPLORER === */
+async function updateOpeningExplorer(){
+  const el=$('openingExplorer');if(!el||!state)return;
+  el.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;opacity:.6">جارٍ التحميل…</div>';
+  try{
+    const params=new URLSearchParams({fen:toFEN(state),variant:'standard',speeds:'blitz,rapid,classical',ratings:'2000,2200,2500',moves:'10'});
+    const resp=await fetch(`https://explorer.lichess.org/lichess?${params}`);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const total=data.white+data.draws+data.black;
+    if(total===0){el.innerHTML='<div style="text-align:center;opacity:.5;padding:12px;font-size:12px">لا بيانات</div>';return}
+    let html=`<div style="font-size:11px;opacity:.7;margin-bottom:6px;text-align:center">${total.toLocaleString()} لعبة</div><div style="max-height:240px;overflow:auto">`;
+    data.moves.slice(0,8).forEach(m=>{
+      const mt=m.white+m.draws+m.black;const pct=mt>0?Math.round(mt/total*100):0;
+      html+=`<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;margin-bottom:4px;font-size:12px"><span style="font-weight:700;font-family:ui-monospace,monospace">${m.san}</span><span style="opacity:.6">${pct}%</span></div>`;
+    });
+    html+='</div>';el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="text-align:center;color:#e74c3c;padding:10px;font-size:12px">❌ '+e.message+'</div>'}
+}
+
+/* === ENDGAME === */
+async function updateEndgameTrainer(){
+  const el=$('endgameTrainer');if(!el||!state)return;
+  const pieces=state.board.filter(Boolean).length;
+  if(pieces>5){el.innerHTML='<div style="text-align:center;padding:12px;font-size:12px;opacity:.6">يدعم 5 قطع أو أقل فقط</div>';return}
+  el.innerHTML='<div style="text-align:center;padding:10px;font-size:12px;opacity:.6">جارٍ…</div>';
+  try{
+    const resp=await fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(toFEN(state))}`);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const cat=data.category||'unknown';
+    let t='',col='var(--muted)';
+    if(cat==='win'){t='فوز';col='var(--success)'}
+    else if(cat==='loss'){t='خسارة';col='var(--danger)'}
+    else if(cat==='draw'){t='تعادل';col='var(--warn)'}
+    else{t='خارج القاعدة'}
+    let html=`<div style="text-align:center;font-size:14px;font-weight:700;color:${col};padding:8px">${t}</div>`;
+    if(data.dtm!==undefined&&data.dtm!==null)html+=`<div style="text-align:center;font-size:12px;opacity:.7">في ${Math.abs(data.dtm)} نقلة</div>`;
+    if(data.moves&&data.moves.length){
+      html+='<div style="margin-top:8px">';
+      data.moves.slice(0,6).forEach(m=>{
+        const mc=m.category==='win'?'var(--success)':m.category==='loss'?'var(--danger)':'var(--warn)';
+        html+=`<div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:12px"><span style="font-family:ui-monospace,monospace">${m.san}</span><span style="color:${mc}">${m.category||'—'}</span></div>`;
+      });
+      html+='</div>';
+    }
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="text-align:center;color:#e74c3c;font-size:12px">❌ '+e.message+'</div>'}
+}
+
+/* === CHESS.COM === */
+async function fetchChessComStats(username){
+  if(!username)return null;
+  try{
+    const resp=await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(username)}/stats`,{headers:{'User-Agent':'OpenChess/10.0'}});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    return await resp.json();
+  }catch(e){return null}
+}
+
+/* === ANALYSIS === */
+async function analyzeGame(){
+  if(!state||fenHistory.length<2){$('analysisStatus').textContent='العب مباراة أولاً';return}
+  $('analysisStatus').textContent='جارٍ التحليل…';$('blunderList').innerHTML='';
+  const evals=[];const total=fenHistory.length-1;let p=0;
+  function step(){
+    if(p>=total){finishAnalysis(evals);return}
+    const st=parseFEN(fenHistory[p+1]);
+    let sc;try{sc=search(st,2,-Infinity,Infinity,0)}catch(e){sc=0}
+    evals.push(st.turn==='w'?-sc:sc);p++;
+    $('analysisStatus').textContent=`${p}/${total}`;
+    setTimeout(step,10);
+  }
+  step();
+}
+function finishAnalysis(evals){
+  $('analysisStatus').textContent='تم';
+  drawEvalChart(evals);
+  const blunders=[];
+  for(let i=0;i<evals.length;i++){
+    const prev=i>0?evals[i-1]:0,cur=evals[i];
+    const mw=i%2===0;
+    const delta=mw?(prev-cur):(cur-prev);
+    if(delta>300)blunders.push({move:i+1,color:mw?'w':'b',loss:delta,type:'blunder'});
+    else if(delta>150)blunders.push({move:i+1,color:mw?'w':'b',loss:delta,type:'mistake'});
+    else if(delta>80)blunders.push({move:i+1,color:mw?'w':'b',loss:delta,type:'inaccuracy'});
+  }
+  const list=$('blunderList');list.innerHTML='';
+  if(blunders.length===0){list.innerHTML='<div style="text-align:center;opacity:.5;padding:20px;font-size:12px">لا أخطاء 👏</div>';return}
+  blunders.forEach(b=>{
+    const d=document.createElement('div');d.className='blunder-item';
+    const mn=Math.ceil(b.move/2);
+    const tc=b.type==='blunder'?'blunder':b.type==='mistake'?'mistake':'inaccuracy';
+    const tt=b.type==='blunder'?'??':b.type==='mistake'?'?':'?!';
+    d.innerHTML=`${mn} (${b.color==='w'?'أ':'س'}) <span class="tag ${tc}">${tt}</span>`;
+    d.onclick=()=>{const f=fenHistory[b.move];if(f){state=parseFEN(f);lastMove=null;selected=-1;legalCache=[];mode='play';render();updateEvalBar();updateStatus()}};
+    list.appendChild(d);
+  });
+}
+function drawEvalChart(evals){
+  const cv=$('evalChart');if(!cv)return;
+  const dpr=window.devicePixelRatio||1;const rect=cv.getBoundingClientRect();
+  cv.width=rect.width*dpr;cv.height=rect.height*dpr;const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;ctx.fillStyle='#0a0d12';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#2a3142';for(let y=0;y<=4;y++){const py=(H/4)*y;ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py);ctx.stroke()}
+  if(evals.length<2){ctx.fillStyle='#666';ctx.fillText('لا بيانات',10,20);return}
+  const mid=H/2;ctx.strokeStyle='#4a4f5a';ctx.beginPath();ctx.moveTo(0,mid);ctx.lineTo(W,mid);ctx.stroke();
+  const max=Math.max(...evals.map(e=>Math.abs(e)),400);const sc=(H/2-10)/max;
+  ctx.strokeStyle='#3b82f6';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<evals.length;i++){const x=(i/(evals.length-1))*W,y=mid-evals[i]*sc;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}
+  ctx.stroke();
+}
+
+/* === PGN IMPORT === */
+function importPGN(text){
+  if(!text.trim()){alert('الصق PGN');return}
+  let body=text;
+  if(body.includes('\n\n'))body=body.slice(body.indexOf('\n\n')+2);
+  body=body.replace(/\{[^}]*\}/g,' ').replace(/\([^)]*\)/g,' ').replace(/\$\d+/g,' ').replace(/[?!]+/g,'').replace(/\d+\.(\.\.)?/g,' ');
+  const tokens=body.split(/\s+/).filter(t=>t&&!/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
+  if(tokens.length===0){alert('لا نقلات');return}
+  state=parseFEN(START_FEN);moveLog=[];fenHistory=[START_FEN];posCounts=new Map();posCounts.set(posKey(state),1);
+  for(const tok of tokens){
+    const clean=tok.replace(/[+#]$/,'');let found=null;
+    for(const m of legalMoves(state)){if(toSAN(state,m).replace(/[+#]$/,'')===clean){found=m;break}}
+    if(!found){alert(`تعذر: ${tok}`);break}
+    const san=toSAN(state,found);makeMove(state,found);moveLog.push(san);fenHistory.push(toFEN(state));
+    const k=posKey(state);posCounts.set(k,(posCounts.get(k)||0)+1);
+  }
+  lastMove=null;selected=-1;legalCache=[];gameEnded=false;overlay.classList.remove('show');
+  renderLog();render();updateStatus();updateEvalBar();Save.save();
+  alert(`✅ ${moveLog.length} نقلة`);
+}
+
+/* === UI BINDINGS === */
+$('btnNew').onclick=()=>newGame();
+$('btnUndo').onclick=()=>{
+  if(thinking||gameEnded||onlineActive)return;
+  let p=(aiEnabled&&moveLog.length>=2)?2:1;
+  while(p-->0&&state.history.length){unmakeMove(state);moveLog.pop();if(fenHistory.length>1)fenHistory.pop()}
+  const k=posKey(state),c=posCounts.get(k)||0;if(c>0)posCounts.set(k,c-1);
+  lastMove=null;selected=-1;legalCache=[];gameEnded=false;overlay.classList.remove('show');
+  renderLog();render();updateStatus();updateEvalBar();Save.save();
+};
+$('btnFlip').onclick=()=>{flipped=!flipped;render()};
+$('btnHint').onclick=()=>{
+  if(gameEnded||thinking||mode!=='play')return;
+  statusEl.textContent='يحسب…';
+  setTimeout(()=>{
+    const m=findBestMove(state,4,3000);updateStatus();
+    if(!m)return;
+    const fs=document.querySelector(`.sq[data-idx="${m.from}"]`),ts=document.querySelector(`.sq[data-idx="${m.to}"]`);
+    if(fs)fs.classList.add('hint');if(ts)ts.classList.add('hint');
+    setTimeout(()=>{if(fs)fs.classList.remove('hint');if(ts)ts.classList.remove('hint')},1800);
+  },20);
+};
+$('btnPgn').onclick=()=>{
+  let h=`[Event "Open Chess"]\n[Date "${new Date().toISOString().slice(0,10)}"]\n\n`;
+  let body='',line='';
+  moveLog.forEach((s,i)=>{if(i%2===0)line+=`${Math.floor(i/2)+1}. ${s} `;else line+=`${s} `;if(line.length>76){body+=line.trim()+'\n';line=''}});
+  navigator.clipboard.writeText(h+body+line);alert('PGN منسوخ');
+};
+$('btnFen').onclick=()=>{const f=toFEN(state);navigator.clipboard.writeText(f);alert('FEN: '+f)};
+$('btnImportPgn').onclick=()=>{const p=prompt('الصق PGN:');if(p)importPGN(p)};
+$('btnAnalyzeCur').onclick=()=>document.querySelector('[data-tab="analysis"]').click();
+$('clockPreset').onchange=e=>{
+  const v=e.target.value;
+  if(v==='none'){clockActive=false;Clock.stop();$('clockRow').classList.remove('show')}
+  else{const[s,i]=v.split('+').map(Number);Clock.init(s,i);clockActive=true;$('clockRow').classList.add('show');Clock.start(state.turn)}
+  Save.save();
+};
+$('aiOn').onchange=e=>{aiEnabled=e.target.checked;if(aiEnabled)maybeAI();Save.save()};
+$('aiDepth').onchange=e=>{aiDepth=+e.target.value;Save.save()};
+$('humanColor').onchange=e=>{humanColor=e.target.value;flipped=(humanColor==='b');render();maybeAI();Save.save()};
+$('soundOn').onchange=e=>{Sound.enabled=e.target.checked;Save.save()};
+$('themeLight').onchange=e=>{document.body.classList.toggle('light',e.target.checked);Save.save()};
+$('btnAnalyze').onclick=analyzeGame;
+$('btnResetElo').onclick=()=>ELO.reset();
+$('btnLoadOpening').onclick=updateOpeningExplorer;
+$('btnProbeEndgame').onclick=updateEndgameTrainer;
+$('btnFetchPlayer').onclick=async()=>{
+  const n=$('playerInput').value.trim();if(!n)return;
+  $('playerStats').innerHTML='<div style="text-align:center;padding:10px;font-size:12px;opacity:.6">جارٍ…</div>';
+  const data=await fetchChessComStats(n);
+  const el=$('playerStats');if(!el)return;
+  if(!data){el.innerHTML='<div style="text-align:center;color:#e74c3c;font-size:12px">لم يُعثر</div>';return}
+  const fmts=[{k:'chess_blitz',l:'Blitz'},{k:'chess_rapid',l:'Rapid'},{k:'chess_bullet',l:'Bullet'},{k:'chess_daily',l:'Daily'}];
+  let h='';
+  fmts.forEach(f=>{
+    const d=data[f.k];
+    if(d&&d.last&&d.last.rating){
+      const r=d.last.rating,w=d.record?.win||0,l=d.record?.loss||0,dr=d.record?.draw||0;
+      const t=w+l+dr,p=t>0?Math.round(w/t*100):0;
+      h+=`<div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg);border:1px solid var(--line);border-radius:7px;margin-bottom:5px;font-size:12px"><span style="font-weight:700">${f.l}</span><span style="color:var(--accent);font-family:ui-monospace,monospace">${r}</span><span style="opacity:.6">${w}W/${l}L (${p}%)</span></div>`;
+    }
+  });
+  el.innerHTML=h||'<div style="text-align:center;opacity:.5;font-size:12px">لا تصنيفات</div>';
+};
+$('btnInitSF').onclick=async()=>{
+  $('sfStatus').textContent='جارٍ التحميل…';$('btnInitSF').disabled=true;
+  const ok=await initStockfish();$('btnInitSF').disabled=false;
+  if(ok){$('sfStatus').textContent='✅ جاهز';$('sfStatus').style.color='#27ae60'}
+  else{$('sfStatus').textContent='❌ فشل';$('sfStatus').style.color='#e74c3c'}
+};
+$('btnAnalyzeSF').onclick=async()=>{
+  if(!sfReady){alert('هيّئ Stockfish أولاً');return}
+  $('sfAnalysis').textContent='يحسب…';
+  const r=await stockfishAnalyze(state,parseInt($('sfDepth').value||'12',10));
+  if(!r||r.cp===null){$('sfAnalysis').textContent='لا نتيجة';return}
+  const sc=(r.cp/100).toFixed(2);const bm=r.bestUci?uciToMove(state,r.bestUci):null;
+  const bs=bm?toSAN(state,bm):'—';
+  $('sfAnalysis').textContent=`${r.cp>0?'+':''}${sc} | أفضل: ${bs}`;
+  if(bm){const fs=document.querySelector(`.sq[data-idx="${bm.from}"]`),ts=document.querySelector(`.sq[data-idx="${bm.to}"]`);if(fs)fs.classList.add('hint');if(ts)ts.classList.add('hint');setTimeout(()=>{if(fs)fs.classList.remove('hint');if(ts)ts.classList.remove('hint')},3000)}
+};
+overlay.addEventListener('click',e=>{if(e.target===overlay&&!pendingPromo)overlay.classList.remove('show')});
+
+// Variants
+document.querySelectorAll('.variant-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.variant-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentVariant=btn.dataset.variant;
+    $('variantInfo').textContent={standard:'Standard — الشطرنج التقليدي',chess960:'Chess960 — ترتيب عشوائي',koth:'King of the Hill — أوصل الملك للمركز',threecheck:'Three-check — 3 كشات للفوز'}[currentVariant];
+  });
+});
+$('btnStartVariant').onclick=()=>newGame(currentVariant);
+$('blindfoldOn').onchange=e=>{document.body.classList.toggle('blindfold',e.target.checked);if(e.target.checked)Achievements.unlock('blindfold')};
+
+// Editor
+$('btnEditorClear').onclick=()=>PositionEditor.clear();
+$('btnEditorPlay').onclick=()=>PositionEditor.play();
+$('btnEditorCopyFen').onclick=()=>{navigator.clipboard.writeText(PositionEditor.toFEN());alert('FEN: '+PositionEditor.toFEN())};
+
+// Tournament
+$('btnTournStart').onclick=()=>{
+  if(!confirm('بدء البطولة؟'))return;
+  Tournament.start(+$('tournSize').value,+$('tournLevel').value);
+};
+$('btnTournReset').onclick=()=>{if(confirm('إعادة البطولة؟'))Tournament.reset()};
+
+// Chat
+$('btnChatSend').onclick=()=>Chat.send($('chatInput').value);
+$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')Chat.send($('chatInput').value)});
+$('btnOfferDraw').onclick=()=>{
+  if(!onlineActive||!conn||!conn.open)return alert('فقط أونلاين');
+  if(!confirm('عرض التعادل؟'))return;
+  try{conn.send({type:'draw-offer'});Chat.append('أنت','عرضت التعادل',true)}catch(e){}
+};
+$('btnResign').onclick=()=>{
+  if(!onlineActive)return alert('فقط أونلاين');
+  if(!confirm('استسلام؟'))return;
+  try{conn.send({type:'resign'})}catch(e){}
+  gameEnded=true;showOverlay('🏳️ استسلمت');
+};
+
+// Cloud
+$('btnFbSetup').onclick=()=>Firebase.setup();
+$('btnSaveGroq').onclick=()=>{const k=$('groqKey').value.trim();if(!k)return alert('أدخل المفتاح');LLM.setKey(k);alert('✅')};
+$('btnAskAI').onclick=async()=>{
+  if(!state)return;
+  if(!LLM.getKey()){alert('ادخل مفتاح Groq — مجاني من console.groq.com');return}
+  $('llmResponse').textContent='🤖 يفكر…';
+  const q=prompt('سؤالك (اتركه فارغاً):')||'';
+  $('llmResponse').textContent=await LLM.explain(toFEN(state),q);
+};
+$('groqKey').value=LLM.getKey();
+Firebase.init();
+
+// Achievements
+$('btnResetBadges').onclick=()=>Achievements.reset();
+
+// Export/Import
+$('btnExport').onclick=()=>{
+  const data={v:10,elo:localStorage.getItem('oc_elo'),ach:localStorage.getItem('oc_achievements_v9'),theme:localStorage.getItem('oc_theme'),game:localStorage.getItem('openchess_v10')};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`openchess-backup-${Date.now()}.json`;a.click();
+};
+$('btnImport').onclick=()=>{
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{
+    try{const d=JSON.parse(ev.target.result);if(d.elo)localStorage.setItem('oc_elo',d.elo);if(d.ach)localStorage.setItem('oc_achievements_v9',d.ach);if(d.theme)localStorage.setItem('oc_theme',d.theme);if(d.game)localStorage.setItem('openchess_v10',d.game);alert('✅ إعادة تحميل');location.reload()}catch(e){alert('ملف غير صالح')}
+  };r.readAsText(f)};inp.click();
+};
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    $('tab-'+tab.dataset.tab).classList.add('active');
+    currentTab=tab.dataset.tab;
+    if(tab.dataset.tab==='puzzles')renderPuzzleList();
+    if(tab.dataset.tab==='coach')Coach.render();
+    if(tab.dataset.tab==='openings'&&state)updateOpeningExplorer();
+    if(tab.dataset.tab==='endgame'&&state)updateEndgameTrainer();
+  });
+});
+
+/* === INIT === */
+(function init(){
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  const saved=Save.load();
+  if(saved&&saved.fen&&(Date.now()-saved.ts)<24*3600*1000){
+    try{
+      state=parseFEN(saved.fen);moveLog=saved.history||[];fenHistory=saved.fenHistory||[START_FEN];
+      currentVariant=saved.variant||'standard';
+      if(saved.settings){
+        aiEnabled=saved.settings.aiEnabled??true;aiDepth=saved.settings.aiDepth??3;
+        humanColor=saved.settings.humanColor??'w';Sound.enabled=saved.settings.sound??true;
+        if(saved.settings.coachEnabled!==undefined){Coach.enabled=saved.settings.coachEnabled;Coach.depth=saved.settings.coachDepth||3}
+        $('aiOn').checked=aiEnabled;$('aiDepth').value=aiDepth;$('humanColor').value=humanColor;$('soundOn').checked=Sound.enabled;
+        $('coachOn').checked=Coach.enabled;$('coachDepth').value=Coach.depth;
+        flipped=(humanColor==='b');
+        if(saved.settings.theme){document.body.classList.add('light');$('themeLight').checked=true}
+      }
+      clockActive=saved.clockActive??false;
+      if(clockActive&&saved.clock){Clock.w=saved.clock.w;Clock.b=saved.clock.b;Clock.inc=saved.clock.inc;Clock.updateUI();$('clockRow').classList.add('show')}
+      selected=-1;legalCache=[];lastMove=null;gameEnded=false;
+      posCounts=new Map();posCounts.set(posKey(state),1);
+      renderLog();render();updateStatus();updateEvalBar();
+      return;
+    }catch(e){}
+  }
+  newGame();
+})();
+</script>
+</body>
+</html>
